@@ -180,7 +180,7 @@ public class UserServlet extends HttpServlet {
 
         userDAO.update(user);
 
-        response.sendRedirect("customer?action=list");
+        response.sendRedirect("user?action=list");
     }
 
     private void deleteUser(HttpServletRequest request, HttpServletResponse response)
@@ -189,6 +189,6 @@ public class UserServlet extends HttpServlet {
         int id = Integer.parseInt(request.getParameter("id"));
         userDAO.delete(id);
 
-        response.sendRedirect("customer?action=list");
+        response.sendRedirect("user?action=list");
     }
 }

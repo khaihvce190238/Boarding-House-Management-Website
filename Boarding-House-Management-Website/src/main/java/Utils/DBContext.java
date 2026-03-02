@@ -9,12 +9,13 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class DBContext {
+
     public Connection connection;
 
     public DBContext() {
         try {
             String url = "jdbc:sqlserver://localhost:1433;"
-                    + "databaseName=;"
+                    + "databaseName=House_management_systemPrice_2;"
                     + "user=sa; "
                     + "password=HDanh;"
                     + "encrypt=true;"
