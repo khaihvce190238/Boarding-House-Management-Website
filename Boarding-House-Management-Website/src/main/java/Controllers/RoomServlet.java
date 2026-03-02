@@ -44,7 +44,10 @@ public class RoomServlet extends HttpServlet {
             case "detail":
                 doGetDetail(request, response);
                 break;
-
+            case "guest":   // GUEST LIST
+                doGetGuest(request, response);
+                break;
+            case "guestdetail":   // ✅ GUEST DETAIL (MỚI)
             default:
                 doGetList(request, response);
                 break;
@@ -79,6 +82,18 @@ public class RoomServlet extends HttpServlet {
         request.setAttribute("rooms", list);
 
         request.getRequestDispatcher("/views/room/list.jsp")
+                .forward(request, response);
+    }
+// ================= GUEST LIST =================
+
+    private void doGetGuest(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        RoomDAO dao = new RoomDAO();
+        List<Room> list = dao.getAll();
+
+        request.setAttribute("rooms", list);
+        request.getRequestDispatcher("/views/guest/listroom.jsp")
                 .forward(request, response);
     }
 

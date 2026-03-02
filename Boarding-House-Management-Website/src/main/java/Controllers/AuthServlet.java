@@ -61,7 +61,7 @@ public class AuthServlet extends HttpServlet {
     private void doGetLogin(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        request.getRequestDispatcher("/views/auth/login.jsp")
+        request.getRequestDispatcher("/views/login.jsp")
                 .forward(request, response);
     }
 
@@ -85,7 +85,7 @@ public class AuthServlet extends HttpServlet {
 
         } else {
             request.setAttribute("error", "Invalid username or password!");
-            request.getRequestDispatcher("/views/auth/login.jsp")
+            request.getRequestDispatcher("/views/login.jsp")
                     .forward(request, response);
         }
     }
@@ -93,7 +93,7 @@ public class AuthServlet extends HttpServlet {
     private void doGetRegister(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        request.getRequestDispatcher("/views/auth/register.jsp")
+        request.getRequestDispatcher("/views/register.jsp")
                 .forward(request, response);
     }
 
@@ -113,7 +113,7 @@ public class AuthServlet extends HttpServlet {
 
         if (dao.existsByUsername(username)) {
             request.setAttribute("error", "Username already exists!");
-            request.getRequestDispatcher("/views/auth/register.jsp")
+            request.getRequestDispatcher("/views/register.jsp")
                     .forward(request, response);
             return;
         }
@@ -124,16 +124,16 @@ public class AuthServlet extends HttpServlet {
         u.setFullName(fullName);
         u.setEmail(email);
         u.setPhone(phone);
-        u.setRole("TENANT"); // default role
+        u.setRole("customer"); // default role
         u.setImage(null);
 
         boolean success = dao.register(u);
 
         if (success) {
-            response.sendRedirect(request.getContextPath() + "/auth");
+            response.sendRedirect(request.getContextPath() + "/customer/home.jsp");
         } else {
             request.setAttribute("error", "Register failed!");
-            request.getRequestDispatcher("/views/auth/register.jsp")
+            request.getRequestDispatcher("/views/register.jsp")
                     .forward(request, response);
         }
     }
@@ -147,6 +147,6 @@ public class AuthServlet extends HttpServlet {
             session.invalidate();
         }
 
-        response.sendRedirect(request.getContextPath() + "/auth");
+        response.sendRedirect(request.getContextPath() + "/guest/listroom.jsp");
     }
 }
