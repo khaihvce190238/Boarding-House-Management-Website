@@ -150,7 +150,7 @@ public class UserServlet extends HttpServlet {
 
         List<User> users = userDAO.getAll();
         request.setAttribute("users", users);
-        request.getRequestDispatcher("/views/user/list.jsp")
+        request.getRequestDispatcher("/views/customer/list.jsp")
                 .forward(request, response);
     }
 
@@ -161,7 +161,7 @@ public class UserServlet extends HttpServlet {
         User user = userDAO.getById(id);
 
         request.setAttribute("user", user);
-        request.getRequestDispatcher("/views/user/edit.jsp")
+        request.getRequestDispatcher("/views/customer/edit.jsp")
                 .forward(request, response);
     }
 
@@ -180,7 +180,7 @@ public class UserServlet extends HttpServlet {
 
         userDAO.update(user);
 
-        response.sendRedirect("user?action=list");
+        response.sendRedirect("customer?action=list");
     }
 
     private void deleteUser(HttpServletRequest request, HttpServletResponse response)
@@ -189,6 +189,6 @@ public class UserServlet extends HttpServlet {
         int id = Integer.parseInt(request.getParameter("id"));
         userDAO.delete(id);
 
-        response.sendRedirect("user?action=list");
+        response.sendRedirect("customer?action=list");
     }
 }

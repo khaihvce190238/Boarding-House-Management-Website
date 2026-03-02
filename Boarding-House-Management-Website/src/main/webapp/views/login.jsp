@@ -36,7 +36,7 @@
                     }
                 %>
 
-                <form action="user" method="post">
+                <form action="auth" method="post">
                     <input type="hidden" name="action" value="login"/>
 
                     <div class="mb-3">
@@ -55,7 +55,7 @@
 
                     <div class="text-center mt-3">
                         <small>Don't have an account? 
-                            <a href="views/register.jsp">Register</a>
+                            <a href="register.jsp">Register</a>
                         </small>
                     </div>
 

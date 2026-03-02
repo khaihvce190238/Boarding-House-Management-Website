@@ -129,7 +129,7 @@
     <a href="${pageContext.request.contextPath}/room?action=guest">Rooms</a>
     <a href="#">Services</a>
     <a href="#">Contact</a>
-    <a href="${pageContext.request.contextPath}/login.jsp">Login</a>
+    <a href="${pageContext.request.contextPath}/views/login.jsp">Login</a>
 </div>
 </div>
 
