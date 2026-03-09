@@ -1,13 +1,5 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
- */
 package Controllers;
 
-/**
- *
- * @author huudanh
- */
 import DALs.NotificationDAO;
 import Models.Notification;
 
@@ -25,6 +17,9 @@ public class NotificationServlet extends HttpServlet {
         notificationDAO = new NotificationDAO();
     }
 
+    // =============================
+    // GET
+    // =============================
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -38,18 +33,30 @@ public class NotificationServlet extends HttpServlet {
         switch (action) {
 
             case "list":
-                listAll(request, response);
+                listNotifications(request, response);
                 break;
 
-            case "byContract":
-                listByContract(request, response);
+            case "create":
+                request.getRequestDispatcher("/admin/notifications/createNotification.jsp")
+                        .forward(request, response);
+                break;
+
+            case "detail":
+                showDetail(request, response);
+                break;
+
+            case "edit":
+                showEditForm(request, response);
                 break;
 
             default:
-                response.sendError(HttpServletResponse.SC_NOT_FOUND);
+                listNotifications(request, response);
         }
     }
 
+    // =============================
+    // POST
+    // =============================
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -57,7 +64,7 @@ public class NotificationServlet extends HttpServlet {
         String action = request.getParameter("action");
 
         if (action == null) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            response.sendRedirect("notification?action=list");
             return;
         }
 
@@ -67,15 +74,59 @@ public class NotificationServlet extends HttpServlet {
                 createNotification(request, response);
                 break;
 
+            case "update":
+                updateNotification(request, response);
+                break;
+
             case "delete":
                 deleteNotification(request, response);
                 break;
 
             default:
-                response.sendError(HttpServletResponse.SC_NOT_FOUND);
+                response.sendRedirect("notification?action=list");
         }
     }
 
+    // =============================
+    // LIST + FILTER
+    // =============================
+    private void listNotifications(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        String contractParam = request.getParameter("contractId");
+        String createdParam = request.getParameter("createdBy");
+        String keyword = request.getParameter("keyword");
+
+        List<Notification> list;
+
+        if (contractParam != null && !contractParam.isEmpty()) {
+
+            int contractId = Integer.parseInt(contractParam);
+            list = notificationDAO.getNotificationByContract(contractId);
+
+        } else if (createdParam != null && !createdParam.isEmpty()) {
+
+            int createdBy = Integer.parseInt(createdParam);
+            list = notificationDAO.getNotificationByUser(createdBy);
+
+        } else if (keyword != null && !keyword.isEmpty()) {
+
+            list = notificationDAO.searchNotification(keyword);
+
+        } else {
+
+            list = notificationDAO.getAllNotifications();
+        }
+
+        request.setAttribute("notifications", list);
+
+        request.getRequestDispatcher("/admin/notifications/notifications.jsp")
+                .forward(request, response);
+    }
+
+    // =============================
+    // CREATE
+    // =============================
     private void createNotification(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
 
@@ -84,13 +135,14 @@ public class NotificationServlet extends HttpServlet {
         String content = request.getParameter("content");
 
         String targetParam = request.getParameter("targetContractId");
+
         Integer targetContractId = null;
 
         if (targetParam != null && !targetParam.isEmpty()) {
             targetContractId = Integer.parseInt(targetParam);
         }
 
-        Notification notification = new Notification(
+        Notification n = new Notification(
                 createdBy,
                 title,
                 content,
@@ -98,39 +150,81 @@ public class NotificationServlet extends HttpServlet {
                 false
         );
 
-        notificationDAO.insert(notification);
+        notificationDAO.insertNotification(n);
 
         response.sendRedirect("notification?action=list");
     }
 
-    private void listAll(HttpServletRequest request, HttpServletResponse response)
+    // =============================
+    // DETAIL
+    // =============================
+    private void showDetail(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        List<Notification> list = notificationDAO.getAll();
+        int id = Integer.parseInt(request.getParameter("id"));
 
-        request.setAttribute("notifications", list);
-        request.getRequestDispatcher("/views/notification/list.jsp")
+        Notification n = notificationDAO.getNotificationById(id);
+
+        request.setAttribute("notification", n);
+
+        request.getRequestDispatcher("/admin/notifications/notificationDetail.jsp")
                 .forward(request, response);
     }
 
-    private void listByContract(HttpServletRequest request, HttpServletResponse response)
+    // =============================
+    // EDIT FORM
+    // =============================
+    private void showEditForm(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        int contractId = Integer.parseInt(request.getParameter("contractId"));
+        int id = Integer.parseInt(request.getParameter("id"));
 
-        List<Notification> list = notificationDAO.getByContract(contractId);
+        Notification n = notificationDAO.getNotificationById(id);
 
-        request.setAttribute("notifications", list);
-        request.getRequestDispatcher("/views/notification/list.jsp")
+        request.setAttribute("notification", n);
+
+        request.getRequestDispatcher("/admin/notifications/editNotification.jsp")
                 .forward(request, response);
     }
 
+    // =============================
+    // UPDATE
+    // =============================
+    private void updateNotification(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+
+        int id = Integer.parseInt(request.getParameter("notificationId"));
+
+        String title = request.getParameter("title");
+        String content = request.getParameter("content");
+
+        String targetParam = request.getParameter("targetContractId");
+
+        Integer targetContractId = null;
+
+        if (targetParam != null && !targetParam.isEmpty()) {
+            targetContractId = Integer.parseInt(targetParam);
+        }
+
+        Notification n = new Notification();
+        n.setTitle(title);
+        n.setContent(content);
+        n.setTargetContractId(targetContractId);
+
+        notificationDAO.updateNotification(id, n);
+
+        response.sendRedirect("notification?action=list");
+    }
+
+    // =============================
+    // DELETE
+    // =============================
     private void deleteNotification(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
 
-        int notificationId = Integer.parseInt(request.getParameter("notificationId"));
+        int id = Integer.parseInt(request.getParameter("notificationId"));
 
-        notificationDAO.delete(notificationId);
+        notificationDAO.deleteNotification(id);
 
         response.sendRedirect("notification?action=list");
     }

@@ -12,6 +12,7 @@ public class Facility {
 
     private int facilityId;
     private String facilityName;
+    private int categoryId;
     private String description;
     private String image;
     private boolean isDeleted;
@@ -19,9 +20,10 @@ public class Facility {
     public Facility() {
     }
 
-    public Facility(int facilityId, String facilityName, String description, String image, boolean isDeleted) {
+    public Facility(int facilityId, String facilityName, int categoryId, String description, String image, boolean isDeleted) {
         this.facilityId = facilityId;
         this.facilityName = facilityName;
+        this.categoryId = categoryId;
         this.description = description;
         this.image = image;
         this.isDeleted = isDeleted;
@@ -41,6 +43,14 @@ public class Facility {
 
     public void setFacilityName(String facilityName) {
         this.facilityName = facilityName;
+    }
+
+    public int getCategoryId() {
+        return categoryId;
+    }
+
+    public void setCategoryId(int categoryId) {
+        this.categoryId = categoryId;
     }
 
     public String getDescription() {
@@ -66,5 +76,5 @@ public class Facility {
     public void setIsDeleted(boolean isDeleted) {
         this.isDeleted = isDeleted;
     }
-    
+
 }

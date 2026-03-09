@@ -1,168 +1,282 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package DALs;
 
-/**
- *
- * @author huudanh
- */
 import Models.Bill;
-import Models.BillItem;
 import Utils.DBContext;
-import java.math.BigDecimal;
+
 import java.sql.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.math.BigDecimal;
 
 public class BillDAO extends DBContext {
 
-    // 🔹 Tạo bill mới
-    public int insertBill(Bill bill) {
-        String sql = "INSERT INTO bill(contract_id, period, due_date, total_amount, status, is_deleted) "
-                + "VALUES (?, ?, ?, 0, 'pending', 0)";
+    // ==============================
+    // GET ALL BILLS
+    // ==============================
+    public List<Bill> getAllBills() {
 
-        try (PreparedStatement st = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        List<Bill> list = new ArrayList<>();
 
-            st.setInt(1, bill.getContractId());
-            st.setDate(2, Date.valueOf(bill.getPeriod()));
-            st.setDate(3, Date.valueOf(bill.getDueDate()));
-            st.executeUpdate();
+        String sql = "SELECT * FROM bill WHERE is_deleted = 0 ORDER BY bill_id DESC";
 
-            ResultSet rs = st.getGeneratedKeys();
-            if (rs.next()) {
-                return rs.getInt(1);
+        try (PreparedStatement st = connection.prepareStatement(sql); ResultSet rs = st.executeQuery()) {
+
+            while (rs.next()) {
+                list.add(mapBill(rs));
             }
 
-        } catch (SQLException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
-        return -1;
+
+        return list;
     }
 
-    // 🔹 Lấy bill theo contract
-    public List<Bill> getBillsByContract(int contractId) {
-        List<Bill> list = new ArrayList<>();
-        String sql = "SELECT * FROM bill "
-                + "WHERE contract_id = ? "
-                + "AND is_deleted = 0";
+    // ==============================
+    // GET BILL BY ID
+    // ==============================
+    public Bill getBillById(int id) {
+
+        String sql = "SELECT * FROM bill WHERE bill_id = ? AND is_deleted = 0";
 
         try (PreparedStatement st = connection.prepareStatement(sql)) {
-            st.setInt(1, contractId);
+
+            st.setInt(1, id);
+
+            ResultSet rs = st.executeQuery();
+
+            if (rs.next()) {
+                return mapBill(rs);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    // ==============================
+    // GET BILL BY TENANT
+    // ==============================
+    public List<Bill> getBillByTenant(int userId) {
+
+        List<Bill> list = new ArrayList<>();
+
+        String sql = "SELECT b.*  "
+                + " FROM bill b "
+                + "JOIN contract c ON b.contract_id = c.contract_id "
+                + "WHERE c.user_id = ? AND b.is_deleted = 0 "
+                + "ORDER BY b.bill_id DESC ";
+
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+
+            st.setInt(1, userId);
+
             ResultSet rs = st.executeQuery();
 
             while (rs.next()) {
                 list.add(mapBill(rs));
             }
 
-        } catch (SQLException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
+
         return list;
     }
 
-    // 🔹 Update status
-    public void updateStatus(int billId, String status) {
-        String sql = "UPDATE bill "
-                + "SET status = ? "
-                + "WHERE bill_id = ?";
+    // ==============================
+    // GET UNPAID BILLS
+    // ==============================
+    public List<Bill> getUnpaidBills() {
 
-        try (PreparedStatement st = connection.prepareStatement(sql)) {
-            st.setString(1, status);
-            st.setInt(2, billId);
-            st.executeUpdate();
+        List<Bill> list = new ArrayList<>();
 
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    // 🔹 Soft delete bill
-    public void deleteBill(int billId) {
-        String sql = "UPDATE bill "
-                + "SET is_deleted = 1 "
-                + "WHERE bill_id = ?";
-
-        try (PreparedStatement st = connection.prepareStatement(sql)) {
-            st.setInt(1, billId);
-            st.executeUpdate();
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    // 🔹 Thêm bill item
-    public void insertBillItem(BillItem item) {
-        String sql = "INSERT INTO bill_item(bill_id, category_id, description, quantity, unit_price) "
-                + "VALUES (?, ?, ?, ?, ?)";
-
-        try (PreparedStatement st = connection.prepareStatement(sql)) {
-
-            st.setInt(1, item.getBillId());
-            st.setInt(2, item.getCategoryId());
-            st.setString(3, item.getDescription());
-            st.setBigDecimal(4, item.getQuantity());
-            st.setBigDecimal(5, item.getUnitPrice());
-            st.executeUpdate();
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    // 🔹 Lấy bill item theo bill
-    public List<BillItem> getItemsByBill(int billId) {
-        List<BillItem> list = new ArrayList<>();
-        String sql = "SELECT * FROM bill_item "
-                + "WHERE bill_id = ?";
-
-        try (PreparedStatement st = connection.prepareStatement(sql)) {
-            st.setInt(1, billId);
-            ResultSet rs = st.executeQuery();
+        String sql = "SELECT * FROM bill "
+                + "WHERE status = 'unpaid' "
+                + "AND is_deleted = 0";
+        try (PreparedStatement st = connection.prepareStatement(sql); ResultSet rs = st.executeQuery()) {
 
             while (rs.next()) {
-                list.add(mapBillItem(rs));
+                list.add(mapBill(rs));
             }
 
-        } catch (SQLException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
+
         return list;
     }
 
-    // 🔹 Tính tổng tiền và update bill
-    public void updateTotalAmount(int billId) {
-        String sql = "SELECT SUM(quantity * unit_price) "
-                + "FROM bill_item "
-                + "WHERE bill_id = ?";
+    // ==============================
+    // INSERT BILL
+    // ==============================
+    public void insertBill(Bill b) {
+
+        String sql = "INSERT INTO bill "
+                + "(contract_id, period, due_date, total_amount, status, is_deleted) "
+                + "VALUES (?, ?, ?, ?, ?, 0)";
 
         try (PreparedStatement st = connection.prepareStatement(sql)) {
-            st.setInt(1, billId);
-            ResultSet rs = st.executeQuery();
 
-            BigDecimal total = BigDecimal.ZERO;
-            if (rs.next() && rs.getBigDecimal(1) != null) {
-                total = rs.getBigDecimal(1);
-            }
+            st.setInt(1, b.getContractId());
+            st.setDate(2, Date.valueOf(b.getPeriod()));
+            st.setDate(3, Date.valueOf(b.getDueDate()));
+            st.setBigDecimal(4, b.getTotalAmount());
+            st.setString(5, b.getStatus());
 
-            String updateSql = "UPDATE bill "
-                    + "SET total_amount = ? "
-                    + "WHERE bill_id = ?";
+            st.executeUpdate();
 
-            try (PreparedStatement st2 = connection.prepareStatement(updateSql)) {
-                st2.setBigDecimal(1, total);
-                st2.setInt(2, billId);
-                st2.executeUpdate();
-            }
-
-        } catch (SQLException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+    // ==============================
+    // UPDATE BILL
+    // ==============================
+    public void updateBill(Bill b) {
+
+        String sql = "UPDATE bill "
+                + "SET contract_id = ?, "
+                + "period = ?, "
+                + "due_date = ?, "
+                + "total_amount = ?, "
+                + "status = ? "
+                + "WHERE bill_id = ?";
+
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+
+            st.setInt(1, b.getContractId());
+            st.setDate(2, Date.valueOf(b.getPeriod()));
+            st.setDate(3, Date.valueOf(b.getDueDate()));
+            st.setBigDecimal(4, b.getTotalAmount());
+            st.setString(5, b.getStatus());
+            st.setInt(6, b.getBillId());
+
+            st.executeUpdate();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // ==============================
+    // SOFT DELETE
+    // ==============================
+    public void deleteBill(int id) {
+
+        String sql = "UPDATE bill SET is_deleted = 1 WHERE bill_id = ?";
+
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+
+            st.setInt(1, id);
+
+            st.executeUpdate();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // ==============================
+    // CALCULATE TOTAL BILL
+    // ==============================
+    public BigDecimal calculateTotal(int contractId) {
+
+        String sql = "SELECT r.price AS room_price, "
+                + "SUM(us.quantity * s.price) AS service_cost "
+                + "FROM contract c "
+                + "JOIN room r ON c.room_id = r.room_id "
+                + "LEFT JOIN usage_service us ON us.contract_id = c.contract_id "
+                + "LEFT JOIN service s ON s.service_id = us.service_id "
+                + "WHERE c.contract_id = ? "
+                + "GROUP BY r.price";
+
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+
+            st.setInt(1, contractId);
+
+            ResultSet rs = st.executeQuery();
+
+            if (rs.next()) {
+
+                BigDecimal room = rs.getBigDecimal("room_price");
+                BigDecimal service = rs.getBigDecimal("service_cost");
+
+                if (service == null) {
+                    service = BigDecimal.ZERO;
+                }
+
+                return room.add(service);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return BigDecimal.ZERO;
+    }
+
+    // ==============================
+    // AUTO CREATE BILL EVERY MONTH
+    // ==============================
+    public void createMonthlyBill(int contractId) {
+
+        LocalDate today = LocalDate.now();
+
+        LocalDate period = LocalDate.of(today.getYear(), today.getMonth(), 1);
+
+        LocalDate dueDate = period.plusDays(10);
+
+        BigDecimal total = calculateTotal(contractId);
+
+        Bill bill = new Bill();
+
+        bill.setContractId(contractId);
+        bill.setPeriod(period);
+        bill.setDueDate(dueDate);
+        bill.setTotalAmount(total);
+        bill.setStatus("unpaid");
+
+        insertBill(bill);
+    }
+
+    // ==============================
+    // CHECK BILL EXISTS FOR MONTH
+    // ==============================
+    public boolean billExists(int contractId, LocalDate period) {
+
+        String sql = "SELECT COUNT(*) "
+                + "FROM bill "
+                + "WHERE contract_id = ? "
+                + "AND period = ?";
+
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+
+            st.setInt(1, contractId);
+            st.setDate(2, Date.valueOf(period));
+
+            ResultSet rs = st.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt(1) > 0;
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
+    // ==============================
+    // MAP RESULTSET -> BILL
+    // ==============================
     private Bill mapBill(ResultSet rs) throws SQLException {
+
         return new Bill(
                 rs.getInt("bill_id"),
                 rs.getInt("contract_id"),
@@ -174,14 +288,4 @@ public class BillDAO extends DBContext {
         );
     }
 
-    private BillItem mapBillItem(ResultSet rs) throws SQLException {
-        return new BillItem(
-                rs.getInt("bill_item_id"),
-                rs.getInt("bill_id"),
-                rs.getInt("category_id"),
-                rs.getString("description"),
-                rs.getBigDecimal("quantity"),
-                rs.getBigDecimal("unit_price")
-        );
-    }
 }

@@ -1,214 +1,298 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package DALs;
 
-/**
- *
- * @author huudanh
- */
+import Utils.DBContext;
 import Models.Service;
 import Models.ServiceUsage;
-import Utils.DBContext;
-import java.sql.*;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 
 public class ServiceDAO extends DBContext {
 
-    /* ==============================
-       SERVICE (soft delete)
-       ============================== */
-    // 🔹 Lấy tất cả service chưa bị xóa
+    // =============================
+    // GET ALL SERVICES
+    // =============================
     public List<Service> getAllServices() {
-        List<Service> list = new ArrayList<>();
-        String sql = "SELECT * FROM [service] "
-                + "WHERE is_deleted = 0";
 
-        try (PreparedStatement st = connection.prepareStatement(sql); ResultSet rs = st.executeQuery()) {
+        List<Service> list = new ArrayList<>();
+
+        String sql = "SELECT * FROM service WHERE is_deleted = 0";
+
+        try {
+
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {
-                list.add(mapService(rs));
+
+                Service s = new Service();
+
+                s.setServiceId(rs.getInt("service_id"));
+                s.setServiceName(rs.getString("service_name"));
+                s.setCategoryId(rs.getInt("category_id"));
+                s.setDescription(rs.getString("description"));
+                s.setImage(rs.getString("image"));
+                s.setIsDeleted(rs.getBoolean("is_deleted"));
+
+                list.add(s);
             }
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
+
         return list;
     }
 
-    // 🔹 Lấy service theo id
+    // =============================
+    // GET SERVICE BY ID
+    // =============================
     public Service getServiceById(int id) {
-        String sql = "SELECT * FROM [service] "
-                + "WHERE service_id = ? "
-                + "AND is_deleted = 0";
 
-        try (PreparedStatement st = connection.prepareStatement(sql)) {
-            st.setInt(1, id);
-            ResultSet rs = st.executeQuery();
+        String sql = "SELECT * FROM service WHERE service_id = ?";
+
+        try {
+
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setInt(1, id);
+
+            ResultSet rs = ps.executeQuery();
 
             if (rs.next()) {
-                return mapService(rs);
+
+                Service s = new Service();
+
+                s.setServiceId(rs.getInt("service_id"));
+                s.setServiceName(rs.getString("service_name"));
+                s.setCategoryId(rs.getInt("category_id"));
+                s.setDescription(rs.getString("description"));
+                s.setImage(rs.getString("image"));
+                s.setIsDeleted(rs.getBoolean("is_deleted"));
+
+                return s;
             }
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
+
         return null;
     }
 
-    // 🔹 Thêm service
+    // =============================
+    // INSERT SERVICE
+    // =============================
     public void insertService(Service s) {
-        String sql = "INSERT INTO [service](service_name, category_id, description, image, is_deleted) "
-                + "VALUES (?, ?, ?, ?, 0)";
 
-        try (PreparedStatement st = connection.prepareStatement(sql)) {
-            st.setString(1, s.getServiceName());
-            st.setInt(2, s.getCategoryId());
-            st.setString(3, s.getDescription());
-            st.setString(4, s.getImage());
-            st.executeUpdate();
+        String sql = "INSERT INTO service(service_name, category_id, description, image, is_deleted) VALUES(?,?,?,?,0)";
+
+        try {
+
+            PreparedStatement ps = connection.prepareStatement(sql);
+
+            ps.setString(1, s.getServiceName());
+            ps.setInt(2, s.getCategoryId());
+            ps.setString(3, s.getDescription());
+            ps.setString(4, s.getImage());
+
+            ps.executeUpdate();
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    // 🔹 Update service
+    // =============================
+    // UPDATE SERVICE
+    // =============================
     public void updateService(Service s) {
-        String sql = "UPDATE [service] "
-                + "SET service_name = ?, category_id = ?, description = ?, image = ? "
-                + "WHERE service_id = ?";
 
-        try (PreparedStatement st = connection.prepareStatement(sql)) {
-            st.setString(1, s.getServiceName());
-            st.setInt(2, s.getCategoryId());
-            st.setString(3, s.getDescription());
-            st.setString(4, s.getImage());
-            st.setInt(5, s.getServiceId());
-            st.executeUpdate();
+        String sql = "UPDATE service SET service_name=?, category_id=?, description=?, image=? WHERE service_id=?";
+
+        try {
+
+            PreparedStatement ps = connection.prepareStatement(sql);
+
+            ps.setString(1, s.getServiceName());
+            ps.setInt(2, s.getCategoryId());
+            ps.setString(3, s.getDescription());
+            ps.setString(4, s.getImage());
+            ps.setInt(5, s.getServiceId());
+
+            ps.executeUpdate();
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    // 🔹 Soft delete service
+    // =============================
+    // DELETE SERVICE (SOFT DELETE)
+    // =============================
     public void deleteService(int id) {
-        String sql = "UPDATE [service] "
-                + "SET is_deleted = 1 "
-                + "WHERE service_id = ?";
 
-        try (PreparedStatement st = connection.prepareStatement(sql)) {
-            st.setInt(1, id);
-            st.executeUpdate();
+        String sql = "UPDATE service SET is_deleted = 1 WHERE service_id=?";
 
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
+        try {
 
-
-    /* ==============================
-       SERVICE USAGE
-       ============================== */
-    // 🔹 Thêm usage
-    public void insertUsage(ServiceUsage u) {
-        String sql = "INSERT INTO service_usage(contract_id, service_id, quantity, usage_date, billed) "
-                + "VALUES (?, ?, ?, ?, 0)";
-
-        try (PreparedStatement st = connection.prepareStatement(sql)) {
-            st.setInt(1, u.getContractId());
-            st.setInt(2, u.getServiceId());
-            st.setBigDecimal(3, u.getQuantity());
-            st.setDate(4, Date.valueOf(u.getUsageDate()));
-            st.executeUpdate();
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setInt(1, id);
+            ps.executeUpdate();
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    // 🔹 Lấy usage theo contract
+    // =============================
+    // ADD SERVICE USAGE
+    // =============================
+    public void addUsage(ServiceUsage u) {
+
+        String sql = "INSERT INTO service_usage(contract_id, service_id, quantity, usage_date, billed) VALUES(?,?,?,?,0)";
+
+        try {
+
+            PreparedStatement ps = connection.prepareStatement(sql);
+
+            ps.setInt(1, u.getContractId());
+            ps.setInt(2, u.getServiceId());
+            ps.setBigDecimal(3, u.getQuantity());
+            ps.setDate(4, Date.valueOf(u.getUsageDate()));
+
+            ps.executeUpdate();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // =============================
+    // GET SERVICE USAGE BY CONTRACT
+    // =============================
     public List<ServiceUsage> getUsageByContract(int contractId) {
-        List<ServiceUsage> list = new ArrayList<>();
-        String sql = "SELECT * FROM service_usage "
-                + "WHERE contract_id = ?";
 
-        try (PreparedStatement st = connection.prepareStatement(sql)) {
-            st.setInt(1, contractId);
-            ResultSet rs = st.executeQuery();
+        List<ServiceUsage> list = new ArrayList<>();
+
+        String sql = "SELECT * FROM service_usage WHERE contract_id = ?";
+
+        try {
+
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setInt(1, contractId);
+
+            ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {
-                list.add(mapUsage(rs));
+
+                ServiceUsage u = new ServiceUsage();
+
+                u.setUsageId(rs.getInt("usage_id"));
+                u.setContractId(rs.getInt("contract_id"));
+                u.setServiceId(rs.getInt("service_id"));
+                u.setQuantity(rs.getBigDecimal("quantity"));
+                u.setUsageDate(rs.getDate("usage_date").toLocalDate());
+                u.setBilled(rs.getBoolean("billed"));
+
+                list.add(u);
             }
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
+
         return list;
     }
 
-    // 🔹 Lấy usage chưa billing
-    public List<ServiceUsage> getUnbilledUsage(int contractId) {
-        List<ServiceUsage> list = new ArrayList<>();
-        String sql = "SELECT * FROM service_usage "
-                + "WHERE contract_id = ? "
-                + "AND billed = 0";
+    // =============================
+    // GET SERVICE PRICE
+    // =============================
+    public BigDecimal getServicePrice(int serviceId, LocalDate usageDate) {
 
-        try (PreparedStatement st = connection.prepareStatement(sql)) {
-            st.setInt(1, contractId);
-            ResultSet rs = st.executeQuery();
+        String sql
+                = "SELECT TOP 1 ph.price_amount "
+                + "FROM service s "
+                + "JOIN price_history ph ON s.category_id = ph.category_id "
+                + "WHERE s.service_id = ? "
+                + "AND ph.effective_from <= ? "
+                + "ORDER BY ph.effective_from DESC";
 
-            while (rs.next()) {
-                list.add(mapUsage(rs));
+        try {
+
+            PreparedStatement ps = connection.prepareStatement(sql);
+
+            ps.setInt(1, serviceId);
+            ps.setDate(2, Date.valueOf(usageDate));
+
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return rs.getBigDecimal("price_amount");
             }
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return list;
+
+        return BigDecimal.ZERO;
     }
 
-    // 🔹 Đánh dấu đã billing
-    public void markAsBilled(int usageId) {
-        String sql = "UPDATE service_usage "
-                + "SET billed = 1 "
-                + "WHERE usage_id = ?";
+    // =============================
+    // CALCULATE USAGE COST
+    // =============================
+    public BigDecimal calculateUsageCost(ServiceUsage usage) {
 
-        try (PreparedStatement st = connection.prepareStatement(sql)) {
-            st.setInt(1, usageId);
-            st.executeUpdate();
+        BigDecimal price = getServicePrice(
+                usage.getServiceId(),
+                usage.getUsageDate()
+        );
+
+        return price.multiply(usage.getQuantity());
+    }
+
+    // =============================
+    // TOTAL SERVICE COST BY CONTRACT
+    // =============================
+    public BigDecimal calculateServiceTotal(int contractId) {
+
+        BigDecimal total = BigDecimal.ZERO;
+
+        List<ServiceUsage> list = getUsageByContract(contractId);
+
+        for (ServiceUsage u : list) {
+
+            if (!u.isBilled()) {
+                total = total.add(calculateUsageCost(u));
+            }
+
+        }
+
+        return total;
+    }
+
+    // =============================
+    // MARK USAGE BILLED
+    // =============================
+    public void markUsageBilled(int contractId) {
+
+        String sql = "UPDATE service_usage SET billed = 1 WHERE contract_id = ?";
+
+        try {
+
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setInt(1, contractId);
+
+            ps.executeUpdate();
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
-
-
-    /* ==============================
-       MAP FUNCTIONS
-       ============================== */
-    private Service mapService(ResultSet rs) throws SQLException {
-        return new Service(
-                rs.getInt("service_id"),
-                rs.getString("service_name"),
-                rs.getInt("category_id"),
-                rs.getString("description"),
-                rs.getString("image"),
-                rs.getBoolean("is_deleted")
-        );
-    }
-
-    private ServiceUsage mapUsage(ResultSet rs) throws SQLException {
-        return new ServiceUsage(
-                rs.getInt("usage_id"),
-                rs.getInt("contract_id"),
-                rs.getInt("service_id"),
-                rs.getBigDecimal("quantity"),
-                rs.getDate("usage_date").toLocalDate(),
-                rs.getBoolean("billed")
-        );
-    }
-}//chưa có tính tiền
+}

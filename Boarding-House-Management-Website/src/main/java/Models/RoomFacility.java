@@ -13,14 +13,16 @@ public class RoomFacility {
     private int roomId;
     private int facilityId;
     private int quantity;
+    private boolean isDeleted;
 
     public RoomFacility() {
     }
 
-    public RoomFacility(int roomId, int facilityId, int quantity) {
+    public RoomFacility(int roomId, int facilityId, int quantity, boolean isDeleted) {
         this.roomId = roomId;
         this.facilityId = facilityId;
         this.quantity = quantity;
+        this.isDeleted = isDeleted;
     }
 
     public int getRoomId() {
@@ -46,5 +48,13 @@ public class RoomFacility {
     public void setQuantity(int quantity) {
         this.quantity = quantity;
     }
-    
+
+    public boolean isIsDeleted() {
+        return isDeleted;
+    }
+
+    public void setIsDeleted(boolean isDeleted) {
+        this.isDeleted = isDeleted;
+    }
+
 }

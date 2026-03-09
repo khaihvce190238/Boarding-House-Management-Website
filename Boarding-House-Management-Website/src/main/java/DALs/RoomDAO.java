@@ -17,7 +17,7 @@ import java.util.List;
 public class RoomDAO extends DBContext {
 
     // 🔹 Lấy tất cả phòng chưa bị xóa
-    public List<Room> getAll() {
+    public List<Room> getAllRooms() {
         List<Room> list = new ArrayList<>();
         String sql = "SELECT * FROM room WHERE is_deleted = 0";
 
@@ -34,7 +34,7 @@ public class RoomDAO extends DBContext {
     }
 
     // 🔹 Lấy phòng theo ID
-    public Room getById(int id) {
+    public Room getRoomById(int id) {
         String sql = "SELECT * FROM room WHERE room_id = ? AND is_deleted = 0";
 
         try (PreparedStatement st = connection.prepareStatement(sql)) {
@@ -52,7 +52,7 @@ public class RoomDAO extends DBContext {
     }
 
     // 🔹 Thêm phòng
-    public void insert(Room r) {
+    public void insertRoom(Room r) {
         String sql = "INSERT INTO room(room_number, status, image, is_deleted)"
                 + "VALUES (?, ?, ?, 0)";
 
@@ -68,7 +68,7 @@ public class RoomDAO extends DBContext {
     }
 
     // 🔹 Cập nhật phòng
-    public void update(Room r) {
+    public void updateRoom(Room r) {
 
         String sql = "UPDATE room "
                 + "SET room_number = ?, status = ?, image = ? "
@@ -86,7 +86,7 @@ public class RoomDAO extends DBContext {
     }
 
     // 🔹 Soft delete
-    public void delete(int id) {
+    public void deleteRoom(int id) {
         String sql = "UPDATE room SET is_deleted = 1 WHERE room_id = ?";
 
         try (PreparedStatement st = connection.prepareStatement(sql)) {
@@ -97,7 +97,8 @@ public class RoomDAO extends DBContext {
             e.printStackTrace();
         }
     }
-
+    //hard Delete
+    
     // 🔹 Cập nhật trạng thái phòng
     public void updateStatus(int roomId, String status) {
         String sql = "UPDATE room SET status = ? WHERE room_id = ?";
@@ -110,6 +111,49 @@ public class RoomDAO extends DBContext {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    //search by key
+    public List<Room> searchByNumber(String keyword) {
+        List<Room> list = new ArrayList<>();
+        String sql = "SELECT * FROM room WHERE room_number LIKE ? AND is_deleted = 0";
+
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setString(1, "%" + keyword + "%");
+
+            ResultSet rs = st.executeQuery();
+
+            while (rs.next()) {
+                list.add(mapRoom(rs));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+    //get room by Status
+    public List<Room> getByStatus(String status) {
+        List<Room> list = new ArrayList<>();
+
+        String sql = "SELECT * FROM room WHERE status = ? AND is_deleted = 0";
+
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setString(1, status);
+
+            ResultSet rs = st.executeQuery();
+
+            while (rs.next()) {
+                list.add(mapRoom(rs));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return list;
     }
 
     // 🔹 Map ResultSet → Room

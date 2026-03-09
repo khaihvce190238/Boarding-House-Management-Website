@@ -1,34 +1,22 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
- */
 package Controllers;
 
-/**
- *
- * @author huudanh
- */
 import DALs.BillDAO;
-import DALs.PriceDAO;
 import Models.Bill;
-import Models.BillItem;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.*;
+
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
 public class BillServlet extends HttpServlet {
 
     private BillDAO billDAO;
-    private PriceDAO priceDAO;
 
     @Override
     public void init() {
         billDAO = new BillDAO();
-        priceDAO = new PriceDAO();
     }
 
     @Override
@@ -36,10 +24,8 @@ public class BillServlet extends HttpServlet {
             throws ServletException, IOException {
 
         String action = request.getParameter("action");
-
         if (action == null) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
-            return;
+            action = "list";
         }
 
         switch (action) {
@@ -48,8 +34,20 @@ public class BillServlet extends HttpServlet {
                 listBills(request, response);
                 break;
 
-            case "view":
-                viewBillItems(request, response);
+            case "create":
+                showCreateForm(request, response);
+                break;
+
+            case "edit":
+                showEditForm(request, response);
+                break;
+
+            case "detail":
+                viewDetail(request, response);
+                break;
+
+            case "delete":
+                deleteBill(request, response);
                 break;
 
             default:
@@ -63,27 +61,14 @@ public class BillServlet extends HttpServlet {
 
         String action = request.getParameter("action");
 
-        if (action == null) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
-            return;
-        }
-
         switch (action) {
 
             case "create":
                 createBill(request, response);
                 break;
 
-            case "addItem":
-                addBillItem(request, response);
-                break;
-
-            case "updateStatus":
-                updateStatus(request, response);
-                break;
-
-            case "delete":
-                deleteBill(request, response);
+            case "update":
+                updateBill(request, response);
                 break;
 
             default:
@@ -91,10 +76,38 @@ public class BillServlet extends HttpServlet {
         }
     }
 
+    // ===============================
+    // LIST
+    // ===============================
+    private void listBills(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        List<Bill> bills = billDAO.getAllBills();
+
+        request.setAttribute("bills", bills);
+
+        request.getRequestDispatcher("/views/admin/bills/bills.jsp")
+                .forward(request, response);
+    }
+
+    // ===============================
+    // SHOW CREATE FORM
+    // ===============================
+    private void showCreateForm(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        request.getRequestDispatcher("/views/admin/bills/createBill.jsp")
+                .forward(request, response);
+    }
+
+    // ===============================
+    // CREATE
+    // ===============================
     private void createBill(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
 
         int contractId = Integer.parseInt(request.getParameter("contractId"));
+
         LocalDate period = LocalDate.parse(request.getParameter("period"));
         LocalDate dueDate = LocalDate.parse(request.getParameter("dueDate"));
 
@@ -102,77 +115,83 @@ public class BillServlet extends HttpServlet {
         bill.setContractId(contractId);
         bill.setPeriod(period);
         bill.setDueDate(dueDate);
+        bill.setStatus("unpaid");
 
-        int billId = billDAO.insertBill(bill);
+        billDAO.insertBill(bill);
 
-        response.sendRedirect("bill?action=view&billId=" + billId);
+        response.sendRedirect("bill?action=list");
     }
 
-    private void addBillItem(HttpServletRequest request, HttpServletResponse response)
+    // ===============================
+    // SHOW EDIT FORM
+    // ===============================
+    private void showEditForm(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        int billId = Integer.parseInt(request.getParameter("id"));
+
+        Bill bill = billDAO.getBillById(billId);
+
+        request.setAttribute("bill", bill);
+
+        request.getRequestDispatcher("/views/admin/bills/editBill.jsp")
+                .forward(request, response);
+    }
+
+    // ===============================
+    // UPDATE
+    // ===============================
+    private void updateBill(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
 
         int billId = Integer.parseInt(request.getParameter("billId"));
-        int categoryId = Integer.parseInt(request.getParameter("categoryId"));
-        BigDecimal quantity = new BigDecimal(request.getParameter("quantity"));
-
-        // Lấy giá hiện hành
-        BigDecimal unitPrice = priceDAO.getCurrentPrice(categoryId, LocalDate.now());
-
-        BillItem item = new BillItem();
-        item.setBillId(billId);
-        item.setCategoryId(categoryId);
-        item.setDescription(request.getParameter("description"));
-        item.setQuantity(quantity);
-        item.setUnitPrice(unitPrice);
-
-        billDAO.insertBillItem(item);
-
-        // Cập nhật tổng tiền
-        billDAO.updateTotalAmount(billId);
-
-        response.sendRedirect("bill?action=view&billId=" + billId);
-    }
-
-    private void listBills(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
 
         int contractId = Integer.parseInt(request.getParameter("contractId"));
-        List<Bill> bills = billDAO.getBillsByContract(contractId);
 
-        request.setAttribute("bills", bills);
-        request.getRequestDispatcher("/views/bill/list.jsp").forward(request, response);
-    }
+        LocalDate period = LocalDate.parse(request.getParameter("period"));
+        LocalDate dueDate = LocalDate.parse(request.getParameter("dueDate"));
 
-    private void viewBillItems(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-
-        int billId = Integer.parseInt(request.getParameter("billId"));
-        List<BillItem> items = billDAO.getItemsByBill(billId);
-
-        request.setAttribute("items", items);
-        request.setAttribute("billId", billId);
-        request.getRequestDispatcher("/views/bill/detail.jsp").forward(request, response);
-    }
-
-    private void updateStatus(HttpServletRequest request, HttpServletResponse response)
-            throws IOException {
-
-        int billId = Integer.parseInt(request.getParameter("billId"));
         String status = request.getParameter("status");
 
-        billDAO.updateStatus(billId, status);
+        Bill bill = new Bill();
 
-        response.sendRedirect("bill?action=view&billId=" + billId);
+        bill.setBillId(billId);
+        bill.setContractId(contractId);
+        bill.setPeriod(period);
+        bill.setDueDate(dueDate);
+        bill.setStatus(status);
+
+        billDAO.updateBill(bill);
+
+        response.sendRedirect("bill?action=list");
     }
 
+    // ===============================
+    // DETAIL
+    // ===============================
+    private void viewDetail(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        int billId = Integer.parseInt(request.getParameter("id"));
+
+        Bill bill = billDAO.getBillById(billId);
+
+        request.setAttribute("bill", bill);
+
+        request.getRequestDispatcher("/views/admin/bills/billDetail.jsp")
+                .forward(request, response);
+    }
+
+    // ===============================
+    // DELETE
+    // ===============================
     private void deleteBill(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
 
-        int billId = Integer.parseInt(request.getParameter("billId"));
+        int billId = Integer.parseInt(request.getParameter("id"));
 
         billDAO.deleteBill(billId);
 
-        response.sendRedirect("bill?action=list&contractId="
-                + request.getParameter("contractId"));
+        response.sendRedirect("bill?action=list");
     }
 }

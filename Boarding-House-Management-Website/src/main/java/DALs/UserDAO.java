@@ -13,7 +13,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.math.BigInteger;
 
-public class UserDAO extends DBContext {
+public class UserDAO extends DBContext {    
 
     // ================= MD5 =================
     private String md5(String input) {
@@ -34,7 +34,7 @@ public class UserDAO extends DBContext {
     // ================= LOGIN =================
     public User login(String username, String password) {
         String sql = "SELECT * FROM [user] "
-                + "WHERE username = ? AND is_deleted = 0";
+                + "WHERE userName = ? AND is_deleted = 0";
 
         try (PreparedStatement st = connection.prepareStatement(sql)) {
             st.setString(1, username);
@@ -57,7 +57,7 @@ public class UserDAO extends DBContext {
     // ================= CHECK USERNAME =================
     public boolean existsByUsername(String username) {
         String sql = "SELECT 1 FROM [user] "
-                + "WHERE username = ? AND is_deleted = 0";
+                + "WHERE userName = ? AND is_deleted = 0";
 
         try (PreparedStatement st = connection.prepareStatement(sql)) {
             st.setString(1, username);
@@ -72,7 +72,7 @@ public class UserDAO extends DBContext {
     // ================= REGISTER =================
     public boolean register(User u) {
         String sql = "INSERT INTO [user] "
-                + "(username, password, full_name, email, phone, role, image, is_deleted) "
+                + "(userName, password, full_name, email, phone, role, image, is_deleted) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?, 0)";
 
         try (PreparedStatement st = connection.prepareStatement(sql)) {
@@ -93,7 +93,7 @@ public class UserDAO extends DBContext {
     }
 
     // ================= GET ALL =================
-    public List<User> getAll() {
+    public List<User> getAllUsers() {
         List<User> list = new ArrayList<>();
         String sql = "SELECT * FROM [user] WHERE is_deleted = 0";
 
@@ -110,7 +110,7 @@ public class UserDAO extends DBContext {
     }
 
     // ================= GET BY ID =================
-    public User getById(int id) {
+    public User getUserById(int id) {
         String sql = "SELECT * FROM [user] "
                 + "WHERE user_id = ? AND is_deleted = 0";
 
@@ -129,9 +129,9 @@ public class UserDAO extends DBContext {
     }
 
     // ================= UPDATE =================
-    public boolean update(User u) {
+    public boolean updateUserById(User u) {
         String sql = "UPDATE [user] "
-                + "SET username = ?, full_name = ?, email = ?, phone = ?, role = ?, image = ? "
+                + "SET userName = ?, full_name = ?, email = ?, phone = ?, role = ?, image = ? "
                 + (u.getPassword() != null && !u.getPassword().isEmpty()
                 ? ", password = ? "
                 : "")
@@ -162,7 +162,7 @@ public class UserDAO extends DBContext {
     }
 
     // ================= DELETE (SOFT DELETE) =================
-    public boolean delete(int id) {
+    public boolean deleteSoft(int id) {
         String sql = "UPDATE [user] SET is_deleted = 1 WHERE user_id = ?";
 
         try (PreparedStatement st = connection.prepareStatement(sql)) {
@@ -175,11 +175,25 @@ public class UserDAO extends DBContext {
         return false;
     }
 
+    public boolean deleteUserById(int id) {
+        String sql = "DELETE FROM [user] WHERE user_id = ?";
+
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, id);
+            return st.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
     // ================= MAP RESULTSET =================
     private User mapUser(ResultSet rs) throws SQLException {
         return new User(
                 rs.getInt("user_id"),
-                rs.getString("username"),
+                rs.getString("userName"),
                 rs.getString("password"),
                 rs.getString("full_name"),
                 rs.getString("email"),

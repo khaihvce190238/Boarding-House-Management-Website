@@ -78,6 +78,9 @@ public class UserServlet extends HttpServlet {
             case "register":
                 register(request, response);
                 break;
+            case "updateProfile":
+                updateProfile(request, response);
+                break;
 
             case "update":
                 updateUser(request, response);
@@ -86,6 +89,23 @@ public class UserServlet extends HttpServlet {
             default:
                 response.sendError(HttpServletResponse.SC_NOT_FOUND);
         }
+    }
+
+    private void updateProfile(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+
+        HttpSession session = request.getSession();
+        User user = (User) session.getAttribute("user");
+
+        user.setFullName(request.getParameter("fullName"));
+        user.setEmail(request.getParameter("email"));
+        user.setPhone(request.getParameter("phone"));
+
+        userDAO.updateUserById(user);
+
+        session.setAttribute("user", user);
+
+        response.sendRedirect("user?action=profile");
     }
 
     private void login(HttpServletRequest request, HttpServletResponse response)
@@ -110,7 +130,7 @@ public class UserServlet extends HttpServlet {
             throws IOException {
 
         request.getSession().invalidate();
-        response.sendRedirect("login.jsp");
+        response.sendRedirect("views/login.jsp");
     }
 
     private void register(HttpServletRequest request, HttpServletResponse response)
@@ -148,7 +168,7 @@ public class UserServlet extends HttpServlet {
     private void listUsers(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        List<User> users = userDAO.getAll();
+        List<User> users = userDAO.getAllUsers();
         request.setAttribute("users", users);
         request.getRequestDispatcher("/views/customer/list.jsp")
                 .forward(request, response);
@@ -158,7 +178,7 @@ public class UserServlet extends HttpServlet {
             throws ServletException, IOException {
 
         int id = Integer.parseInt(request.getParameter("id"));
-        User user = userDAO.getById(id);
+        User user = userDAO.getUserById(id);
 
         request.setAttribute("user", user);
         request.getRequestDispatcher("/views/customer/edit.jsp")
@@ -178,7 +198,7 @@ public class UserServlet extends HttpServlet {
         user.setImage(request.getParameter("image"));
         user.setPassword(request.getParameter("password")); // nếu rỗng sẽ không update
 
-        userDAO.update(user);
+        userDAO.updateUserById(user);
 
         response.sendRedirect("user?action=list");
     }
@@ -187,7 +207,7 @@ public class UserServlet extends HttpServlet {
             throws IOException {
 
         int id = Integer.parseInt(request.getParameter("id"));
-        userDAO.delete(id);
+        userDAO.deleteSoft(id);
 
         response.sendRedirect("user?action=list");
     }

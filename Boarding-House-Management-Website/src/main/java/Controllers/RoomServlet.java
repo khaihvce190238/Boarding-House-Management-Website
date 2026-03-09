@@ -1,55 +1,53 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
- */
 package Controllers;
 
-/**
- *
- * @author huudanh
- */
 import DALs.RoomDAO;
-import DALs.FacilityDAO;
 import Models.Room;
-import Models.Facility;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.*;
+
 import java.io.IOException;
 import java.util.List;
 
 public class RoomServlet extends HttpServlet {
 
+    private RoomDAO roomDAO;
+
+    @Override
+    public void init() {
+        roomDAO = new RoomDAO();
+    }
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        String action = request.getParameter("action") != null
-                ? request.getParameter("action") : "";
+        String action = request.getParameter("action");
+
+        if (action == null) {
+            action = "list";
+        }
 
         switch (action) {
 
-            case "add":
-                doGetAdd(request, response);
+            case "create":
+                showCreateForm(request, response);
                 break;
 
-            case "update":
-                doGetUpdate(request, response);
+            case "edit":
+                showEditForm(request, response);
                 break;
 
             case "delete":
-                doGetDelete(request, response);
+                deleteRoom(request, response);
                 break;
 
             case "detail":
-                doGetDetail(request, response);
+                showDetail(request, response);
                 break;
-            case "guest":   // GUEST LIST
-                doGetGuest(request, response);
-                break;
-            case "guestdetail":   // ✅ GUEST DETAIL (MỚI)
+
             default:
-                doGetList(request, response);
+                listRooms(request, response);
                 break;
         }
     }
@@ -58,59 +56,42 @@ public class RoomServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        String action = request.getParameter("action") != null
-                ? request.getParameter("action") : "";
+        String action = request.getParameter("action");
 
         switch (action) {
 
-            case "add":
-                doPostAdd(request, response);
+            case "create":
+                insertRoom(request, response);
                 break;
 
-            case "update":
-                doPostUpdate(request, response);
+            case "edit":
+                updateRoom(request, response);
                 break;
         }
     }
 
-    private void doGetList(HttpServletRequest request, HttpServletResponse response)
+    // ================= LIST =================
+    private void listRooms(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        RoomDAO roomDAO = new RoomDAO();
-        List<Room> list = roomDAO.getAll();
+        List<Room> rooms = roomDAO.getAllRooms();
 
-        request.setAttribute("rooms", list);
+        request.setAttribute("rooms", rooms);
 
-        request.getRequestDispatcher("/views/room/list.jsp")
-                .forward(request, response);
-    }
-// ================= GUEST LIST =================
-
-    private void doGetGuest(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-
-        RoomDAO dao = new RoomDAO();
-        List<Room> list = dao.getAll();
-
-        request.setAttribute("rooms", list);
-        request.getRequestDispatcher("/views/guest/listroom.jsp")
+        request.getRequestDispatcher("/views/admin/rooms/rooms.jsp")
                 .forward(request, response);
     }
 
-    private void doGetAdd(HttpServletRequest request, HttpServletResponse response)
+    // ================= CREATE =================
+    private void showCreateForm(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        FacilityDAO facilityDAO = new FacilityDAO();
-        List<Facility> facilities = facilityDAO.getAll();
-
-        request.setAttribute("facilities", facilities);
-
-        request.getRequestDispatcher("/views/room/add.jsp")
+        request.getRequestDispatcher("/views/admin/rooms/createRoom.jsp")
                 .forward(request, response);
     }
 
-    private void doPostAdd(HttpServletRequest request, HttpServletResponse response)
-            throws IOException, ServletException {
+    private void insertRoom(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
 
         String roomNumber = request.getParameter("roomNumber");
         String status = request.getParameter("status");
@@ -121,72 +102,68 @@ public class RoomServlet extends HttpServlet {
         room.setStatus(status);
         room.setImage(image);
 
-        RoomDAO dao = new RoomDAO();
-        dao.insert(room);
+        roomDAO.insertRoom(room);
 
-        response.sendRedirect(request.getContextPath() + "/room");
+        response.sendRedirect("room");
     }
 
-    private void doGetUpdate(HttpServletRequest request, HttpServletResponse response)
+    // ================= EDIT =================
+    private void showEditForm(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
         int id = Integer.parseInt(request.getParameter("id"));
 
-        RoomDAO roomDAO = new RoomDAO();
-        Room room = roomDAO.getById(id);
-
-        FacilityDAO facilityDAO = new FacilityDAO();
-        List<Facility> facilities = facilityDAO.getAll();
+        Room room = roomDAO.getRoomById(id);
 
         request.setAttribute("room", room);
-        request.setAttribute("facilities", facilities);
 
-        request.getRequestDispatcher("/views/room/update.jsp")
+        request.getRequestDispatcher("/views/admin/rooms/editRoom.jsp")
                 .forward(request, response);
     }
 
-    private void doPostUpdate(HttpServletRequest request, HttpServletResponse response)
+    private void updateRoom(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
 
         int id = Integer.parseInt(request.getParameter("id"));
+
         String roomNumber = request.getParameter("roomNumber");
         String status = request.getParameter("status");
         String image = request.getParameter("image");
 
         Room room = new Room();
+
         room.setRoomId(id);
         room.setRoomNumber(roomNumber);
         room.setStatus(status);
         room.setImage(image);
 
-        RoomDAO dao = new RoomDAO();
-        dao.update(room);
+        roomDAO.updateRoom(room);
 
-        response.sendRedirect(request.getContextPath() + "/room");
+        response.sendRedirect("room");
     }
 
-    private void doGetDelete(HttpServletRequest request, HttpServletResponse response)
+    // ================= DELETE =================
+    private void deleteRoom(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
 
         int id = Integer.parseInt(request.getParameter("id"));
 
-        RoomDAO dao = new RoomDAO();
-        dao.delete(id);
+        roomDAO.deleteRoom(id);
 
-        response.sendRedirect(request.getContextPath() + "/room");
+        response.sendRedirect("room");
     }
 
-    private void doGetDetail(HttpServletRequest request, HttpServletResponse response)
+    // ================= DETAIL =================
+    private void showDetail(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
         int id = Integer.parseInt(request.getParameter("id"));
 
-        RoomDAO roomDAO = new RoomDAO();
-        Room room = roomDAO.getById(id);
+        Room room = roomDAO.getRoomById(id);
 
         request.setAttribute("room", room);
 
-        request.getRequestDispatcher("/views/room/detail.jsp")
+        request.getRequestDispatcher("/views/admin/rooms/roomDetail.jsp")
                 .forward(request, response);
     }
 }

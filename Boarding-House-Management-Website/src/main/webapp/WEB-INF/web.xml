@@ -5,10 +5,6 @@
         <servlet-class>Controllers.AdminServlet</servlet-class>
     </servlet>
     <servlet>
-        <servlet-name>AuthServlet</servlet-name>
-        <servlet-class>Controllers.AuthServlet</servlet-class>
-    </servlet>
-    <servlet>
         <servlet-name>RoomServlet</servlet-name>
         <servlet-class>Controllers.RoomServlet</servlet-class>
     </servlet>
@@ -17,16 +13,8 @@
         <servlet-class>Controllers.ContractServlet</servlet-class>
     </servlet>
     <servlet>
-        <servlet-name>FacilityServlet</servlet-name>
-        <servlet-class>Controllers.FacilityServlet</servlet-class>
-    </servlet>
-    <servlet>
         <servlet-name>ServiceServlet</servlet-name>
         <servlet-class>Controllers.ServiceServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>MeterServlet</servlet-name>
-        <servlet-class>Controllers.MeterServlet</servlet-class>
     </servlet>
     <servlet>
         <servlet-name>BillServlet</servlet-name>
@@ -40,13 +28,29 @@
         <servlet-name>UserServlet</servlet-name>
         <servlet-class>Controllers.UserServlet</servlet-class>
     </servlet>
+    <servlet>
+        <servlet-name>AuthServlet</servlet-name>
+        <servlet-class>Controllers.AuthServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>DashboardServlet</servlet-name>
+        <servlet-class>Controllers.DashboardServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>CustomerServlet</servlet-name>
+        <servlet-class>Controllers.CustomerServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>FacilityServlet</servlet-name>
+        <servlet-class>Controllers.FacilityServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>PriceServlet</servlet-name>
+        <servlet-class>Controllers.PriceServlet</servlet-class>
+    </servlet>
     <servlet-mapping>
         <servlet-name>AdminServlet</servlet-name>
         <url-pattern>/admin</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>AuthServlet</servlet-name>
-        <url-pattern>/auth</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>RoomServlet</servlet-name>
@@ -57,16 +61,8 @@
         <url-pattern>/contract</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
-        <servlet-name>FacilityServlet</servlet-name>
-        <url-pattern>/facility</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
         <servlet-name>ServiceServlet</servlet-name>
-        <url-pattern>/service</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>MeterServlet</servlet-name>
-        <url-pattern>/meter</url-pattern>
+        <url-pattern>/services</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>BillServlet</servlet-name>
@@ -79,6 +75,26 @@
     <servlet-mapping>
         <servlet-name>UserServlet</servlet-name>
         <url-pattern>/user</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>AuthServlet</servlet-name>
+        <url-pattern>/auth</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>DashboardServlet</servlet-name>
+        <url-pattern>/dashboard</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>CustomerServlet</servlet-name>
+        <url-pattern>/customer</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>FacilityServlet</servlet-name>
+        <url-pattern>/facility</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>PriceServlet</servlet-name>
+        <url-pattern>/price</url-pattern>
     </servlet-mapping>
     <session-config>
         <session-timeout>

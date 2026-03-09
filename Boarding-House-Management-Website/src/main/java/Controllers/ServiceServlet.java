@@ -1,20 +1,12 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
- */
 package Controllers;
 
-/**
- *
- * @author huudanh
- */
 import DALs.ServiceDAO;
-import DALs.PriceDAO;
 import Models.Service;
 import Models.ServiceUsage;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.*;
+
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -23,14 +15,15 @@ import java.util.List;
 public class ServiceServlet extends HttpServlet {
 
     private ServiceDAO serviceDAO;
-    private PriceDAO priceDAO;
 
     @Override
     public void init() {
         serviceDAO = new ServiceDAO();
-        priceDAO = new PriceDAO();
     }
 
+    // ===============================
+    // GET
+    // ===============================
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -38,75 +31,49 @@ public class ServiceServlet extends HttpServlet {
         String action = request.getParameter("action");
 
         if (action == null) {
-            List<Service> list = serviceDAO.getAllServices();
-            request.setAttribute("services", list);
-            request.getRequestDispatcher("service-list.jsp")
-                    .forward(request, response);
+            listServices(request, response);
             return;
         }
 
         switch (action) {
 
             case "create":
-                request.getRequestDispatcher("service-form.jsp")
+                request.getRequestDispatcher("/admin/services/createService.jsp")
                         .forward(request, response);
                 break;
 
             case "edit":
-                int id = Integer.parseInt(request.getParameter("id"));
-                Service s = serviceDAO.getServiceById(id);
-                request.setAttribute("service", s);
-                request.getRequestDispatcher("service-form.jsp")
-                        .forward(request, response);
+                showEditForm(request, response);
                 break;
 
             case "delete":
-                int deleteId = Integer.parseInt(request.getParameter("id"));
-                serviceDAO.deleteService(deleteId);
-                response.sendRedirect("service");
+                deleteService(request, response);
+                break;
+
+            case "detail":
+                showDetail(request, response);
                 break;
 
             case "usage":
-                int contractId = Integer.parseInt(request.getParameter("contractId"));
-                List<ServiceUsage> usageList = serviceDAO.getUsageByContract(contractId);
-                request.setAttribute("usageList", usageList);
-                request.getRequestDispatcher("usage-list.jsp")
-                        .forward(request, response);
+                listUsage(request, response);
                 break;
 
-            case "unbilled":
-                int cId = Integer.parseInt(request.getParameter("contractId"));
-                List<ServiceUsage> unbilled = serviceDAO.getUnbilledUsage(cId);
-
-                BigDecimal total = BigDecimal.ZERO;
-
-                for (ServiceUsage u : unbilled) {
-                    BigDecimal price = priceDAO.getCurrentPrice(
-                            serviceDAO.getServiceById(u.getServiceId()).getCategoryId(),
-                            u.getUsageDate()
-                    );
-
-                    BigDecimal cost = price.multiply(u.getQuantity());
-                    total = total.add(cost);
-                }
-
-                request.setAttribute("usageList", unbilled);
-                request.setAttribute("totalAmount", total);
-                request.getRequestDispatcher("usage-unbilled.jsp")
-                        .forward(request, response);
+            case "totalCost":
+                calculateTotal(request, response);
                 break;
 
             case "markBilled":
-                int usageId = Integer.parseInt(request.getParameter("usageId"));
-                serviceDAO.markAsBilled(usageId);
-                response.sendRedirect("service");
+                markBilled(request, response);
                 break;
 
             default:
-                response.sendRedirect("service");
+                listServices(request, response);
         }
     }
 
+    // ===============================
+    // POST
+    // ===============================
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -115,47 +82,194 @@ public class ServiceServlet extends HttpServlet {
 
         String action = request.getParameter("action");
 
-        if ("insert".equals(action)) {
+        switch (action) {
 
-            String name = request.getParameter("serviceName");
-            int categoryId = Integer.parseInt(request.getParameter("categoryId"));
-            String description = request.getParameter("description");
-            String image = request.getParameter("image");
+            case "insert":
+                insertService(request, response);
+                break;
 
-            Service s = new Service(
-                    0, name, categoryId, description, image, false
-            );
+            case "update":
+                updateService(request, response);
+                break;
 
-            serviceDAO.insertService(s);
-            response.sendRedirect("service");
-        } else if ("update".equals(action)) {
-
-            int id = Integer.parseInt(request.getParameter("serviceId"));
-            String name = request.getParameter("serviceName");
-            int categoryId = Integer.parseInt(request.getParameter("categoryId"));
-            String description = request.getParameter("description");
-            String image = request.getParameter("image");
-
-            Service s = new Service(
-                    id, name, categoryId, description, image, false
-            );
-
-            serviceDAO.updateService(s);
-            response.sendRedirect("service");
-        } else if ("addUsage".equals(action)) {
-
-            int contractId = Integer.parseInt(request.getParameter("contractId"));
-            int serviceId = Integer.parseInt(request.getParameter("serviceId"));
-            BigDecimal quantity = new BigDecimal(request.getParameter("quantity"));
-            LocalDate usageDate = LocalDate.parse(request.getParameter("usageDate"));
-
-            ServiceUsage u = new ServiceUsage(
-                    0, contractId, serviceId,
-                    quantity, usageDate, false
-            );
-
-            serviceDAO.insertUsage(u);
-            response.sendRedirect("service?action=usage&contractId=" + contractId);
+            case "addUsage":
+                addUsage(request, response);
+                break;
         }
+    }
+
+    // ===============================
+    // LIST SERVICES
+    // ===============================
+    private void listServices(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        List<Service> list = serviceDAO.getAllServices();
+
+        request.setAttribute("services", list);
+
+        request.getRequestDispatcher("/admin/services/services.jsp")
+                .forward(request, response);
+    }
+
+    // ===============================
+    // INSERT
+    // ===============================
+    private void insertService(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+
+        String name = request.getParameter("serviceName");
+        int categoryId = Integer.parseInt(request.getParameter("categoryId"));
+        String description = request.getParameter("description");
+        String image = request.getParameter("image");
+
+        Service s = new Service();
+        s.setServiceName(name);
+        s.setCategoryId(categoryId);
+        s.setDescription(description);
+        s.setImage(image);
+
+        serviceDAO.insertService(s);
+
+        response.sendRedirect("services");
+    }
+
+    // ===============================
+    // SHOW EDIT
+    // ===============================
+    private void showEditForm(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        int id = Integer.parseInt(request.getParameter("id"));
+
+        Service service = serviceDAO.getServiceById(id);
+
+        request.setAttribute("service", service);
+
+        request.getRequestDispatcher("/admin/services/editService.jsp")
+                .forward(request, response);
+    }
+
+    // ===============================
+    // UPDATE
+    // ===============================
+    private void updateService(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+
+        int id = Integer.parseInt(request.getParameter("serviceId"));
+
+        String name = request.getParameter("serviceName");
+        int categoryId = Integer.parseInt(request.getParameter("categoryId"));
+        String description = request.getParameter("description");
+        String image = request.getParameter("image");
+
+        Service s = new Service();
+        s.setServiceId(id);
+        s.setServiceName(name);
+        s.setCategoryId(categoryId);
+        s.setDescription(description);
+        s.setImage(image);
+
+        serviceDAO.updateService(s);
+
+        response.sendRedirect("services");
+    }
+
+    // ===============================
+    // DELETE
+    // ===============================
+    private void deleteService(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+
+        int id = Integer.parseInt(request.getParameter("id"));
+
+        serviceDAO.deleteService(id);
+
+        response.sendRedirect("services");
+    }
+
+    // ===============================
+    // DETAIL
+    // ===============================
+    private void showDetail(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        int id = Integer.parseInt(request.getParameter("id"));
+
+        Service service = serviceDAO.getServiceById(id);
+
+        request.setAttribute("service", service);
+
+        request.getRequestDispatcher("/admin/services/serviceDetail.jsp")
+                .forward(request, response);
+    }
+
+    // ===============================
+    // ADD USAGE
+    // ===============================
+    private void addUsage(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+
+        int contractId = Integer.parseInt(request.getParameter("contractId"));
+        int serviceId = Integer.parseInt(request.getParameter("serviceId"));
+        BigDecimal quantity = new BigDecimal(request.getParameter("quantity"));
+
+        LocalDate usageDate = LocalDate.parse(request.getParameter("usageDate"));
+
+        ServiceUsage usage = new ServiceUsage();
+
+        usage.setContractId(contractId);
+        usage.setServiceId(serviceId);
+        usage.setQuantity(quantity);
+        usage.setUsageDate(usageDate);
+
+        serviceDAO.addUsage(usage);
+
+        response.sendRedirect("services?action=usage&contractId=" + contractId);
+    }
+
+    // ===============================
+    // LIST USAGE
+    // ===============================
+    private void listUsage(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        int contractId = Integer.parseInt(request.getParameter("contractId"));
+
+        List<ServiceUsage> usageList = serviceDAO.getUsageByContract(contractId);
+
+        request.setAttribute("usageList", usageList);
+
+        request.getRequestDispatcher("/admin/services/serviceDetail.jsp")
+                .forward(request, response);
+    }
+
+    // ===============================
+    // TOTAL COST
+    // ===============================
+    private void calculateTotal(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        int contractId = Integer.parseInt(request.getParameter("contractId"));
+
+        BigDecimal total = serviceDAO.calculateServiceTotal(contractId);
+
+        request.setAttribute("totalCost", total);
+
+        request.getRequestDispatcher("/admin/services/serviceDetail.jsp")
+                .forward(request, response);
+    }
+
+    // ===============================
+    // MARK BILLED
+    // ===============================
+    private void markBilled(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+
+        int contractId = Integer.parseInt(request.getParameter("contractId"));
+
+        serviceDAO.markUsageBilled(contractId);
+
+        response.sendRedirect("services?action=usage&contractId=" + contractId);
     }
 }
