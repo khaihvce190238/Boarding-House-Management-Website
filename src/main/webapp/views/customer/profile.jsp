@@ -1,9 +1,9 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Hồ sơ cá nhân - AKDD House</title>
+    <title>My Profile - AKDD House</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -79,12 +79,12 @@
         <c:if test="${not empty sessionScope.successMessage}">
             <div class="alert alert-success d-flex align-items-center mb-3" role="alert">
                 <i class="bi bi-check-circle-fill me-2"></i>
-                <span>${sessionScope.successMessage}</span>
+                <span><c:out value="${sessionScope.successMessage}" /></span>
             </div>
             <% session.removeAttribute("successMessage"); %>
         </c:if>
 
-        <%-- Profile header card --%>
+        <%-- Profile header --%>
         <div class="profile-header mb-4 d-flex align-items-center gap-4">
             <div class="avatar-wrapper">
                 <i class="bi bi-person-fill"></i>
@@ -95,8 +95,8 @@
                 <span class="role-badge
                     ${user.role == 'admin' ? 'role-admin' :
                       user.role == 'staff' ? 'role-staff' : 'role-customer'}">
-                    ${user.role == 'admin' ? 'Quản trị viên' :
-                      user.role == 'staff' ? 'Nhân viên' : 'Khách thuê'}
+                    ${user.role == 'admin' ? 'Administrator' :
+                      user.role == 'staff' ? 'Staff'         : 'Tenant'}
                 </span>
             </div>
         </div>
@@ -107,21 +107,21 @@
 
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h6 class="fw-bold text-muted mb-0">
-                        <i class="bi bi-person-lines-fill me-2"></i>Thông tin cá nhân
+                        <i class="bi bi-person-lines-fill me-2"></i>Personal Information
                     </h6>
                     <a href="${pageContext.request.contextPath}/customer?action=editProfile"
                        class="btn btn-edit btn-primary btn-sm">
-                        <i class="bi bi-pencil-square me-1"></i>Chỉnh sửa
+                        <i class="bi bi-pencil-square me-1"></i>Edit
                     </a>
                 </div>
 
                 <div class="info-row">
-                    <div class="info-label"><i class="bi bi-person me-2"></i>Họ và tên</div>
+                    <div class="info-label"><i class="bi bi-person me-2"></i>Full Name</div>
                     <div class="info-value">${not empty user.fullName ? user.fullName : '—'}</div>
                 </div>
 
                 <div class="info-row">
-                    <div class="info-label"><i class="bi bi-at me-2"></i>Tên đăng nhập</div>
+                    <div class="info-label"><i class="bi bi-at me-2"></i>Username</div>
                     <div class="info-value text-muted">${user.username}</div>
                 </div>
 
@@ -132,19 +132,19 @@
                             <c:when test="${not empty user.email}">
                                 <a href="mailto:${user.email}" class="text-decoration-none">${user.email}</a>
                             </c:when>
-                            <c:otherwise><span class="text-muted">Chưa cập nhật</span></c:otherwise>
+                            <c:otherwise><span class="text-muted">Not set</span></c:otherwise>
                         </c:choose>
                     </div>
                 </div>
 
                 <div class="info-row">
-                    <div class="info-label"><i class="bi bi-telephone me-2"></i>Điện thoại</div>
+                    <div class="info-label"><i class="bi bi-telephone me-2"></i>Phone</div>
                     <div class="info-value">
                         <c:choose>
                             <c:when test="${not empty user.phone}">
                                 <a href="tel:${user.phone}" class="text-decoration-none">${user.phone}</a>
                             </c:when>
-                            <c:otherwise><span class="text-muted">Chưa cập nhật</span></c:otherwise>
+                            <c:otherwise><span class="text-muted">Not set</span></c:otherwise>
                         </c:choose>
                     </div>
                 </div>
@@ -162,8 +162,8 @@
                         <i class="bi bi-pencil" style="color:#667eea;font-size:18px"></i>
                     </div>
                     <div>
-                        <div class="fw-semibold text-dark small">Chỉnh sửa hồ sơ</div>
-                        <div class="text-muted" style="font-size:12px">Cập nhật thông tin cá nhân</div>
+                        <div class="fw-semibold text-dark small">Edit Profile</div>
+                        <div class="text-muted" style="font-size:12px">Update your personal details</div>
                     </div>
                 </a>
             </div>
@@ -175,8 +175,8 @@
                         <i class="bi bi-shield-lock" style="color:#28a745;font-size:18px"></i>
                     </div>
                     <div>
-                        <div class="fw-semibold text-dark small">Đổi mật khẩu</div>
-                        <div class="text-muted" style="font-size:12px">Cập nhật mật khẩu bảo mật</div>
+                        <div class="fw-semibold text-dark small">Change Password</div>
+                        <div class="text-muted" style="font-size:12px">Update your security password</div>
                     </div>
                 </a>
             </div>

@@ -151,7 +151,7 @@ public class AuthServlet extends HttpServlet {
             session.setAttribute("user", user);
             response.sendRedirect(request.getContextPath() + "/dashboard");
         } else {
-            request.setAttribute("error", "Tên đăng nhập hoặc mật khẩu không đúng");
+            request.setAttribute("error", "Incorrect username or password");
             request.getRequestDispatcher("/views/login.jsp").forward(request, response);
         }
     }
@@ -170,19 +170,19 @@ public class AuthServlet extends HttpServlet {
 
         if (username == null || username.trim().isEmpty()
                 || password == null || password.trim().isEmpty()) {
-            request.setAttribute("error", "Tên đăng nhập và mật khẩu không được để trống");
+            request.setAttribute("error", "Username and password are required");
             request.getRequestDispatcher("/views/register.jsp").forward(request, response);
             return;
         }
 
         if (confirm != null && !confirm.isEmpty() && !confirm.equals(password)) {
-            request.setAttribute("error", "Mật khẩu xác nhận không khớp");
+            request.setAttribute("error", "Passwords do not match");
             request.getRequestDispatcher("/views/register.jsp").forward(request, response);
             return;
         }
 
         if (userDAO.existsByUsername(username.trim())) {
-            request.setAttribute("error", "Tên đăng nhập đã tồn tại");
+            request.setAttribute("error", "Username is already taken");
             request.getRequestDispatcher("/views/register.jsp").forward(request, response);
             return;
         }
@@ -200,10 +200,10 @@ public class AuthServlet extends HttpServlet {
 
         if (success) {
             HttpSession session = request.getSession();
-            session.setAttribute("successMessage", "Đăng ký thành công! Vui lòng đăng nhập.");
+            session.setAttribute("successMessage", "Account created successfully! Please sign in.");
             response.sendRedirect(request.getContextPath() + "/auth?action=login");
         } else {
-            request.setAttribute("error", "Đăng ký thất bại, vui lòng thử lại");
+            request.setAttribute("error", "Registration failed. Please try again.");
             request.getRequestDispatcher("/views/register.jsp").forward(request, response);
         }
     }
@@ -239,19 +239,19 @@ public class AuthServlet extends HttpServlet {
 
         if (oldPassword == null || oldPassword.trim().isEmpty()
                 || newPassword == null || newPassword.trim().isEmpty()) {
-            request.setAttribute("error", "Vui lòng nhập đầy đủ thông tin");
+            request.setAttribute("error", "Please fill in all fields");
             request.getRequestDispatcher("/views/customer/changePassword.jsp").forward(request, response);
             return;
         }
 
         if (!newPassword.equals(confirmPassword)) {
-            request.setAttribute("error", "Mật khẩu mới không khớp");
+            request.setAttribute("error", "New passwords do not match");
             request.getRequestDispatcher("/views/customer/changePassword.jsp").forward(request, response);
             return;
         }
 
         if (newPassword.length() < 6) {
-            request.setAttribute("error", "Mật khẩu mới phải có ít nhất 6 ký tự");
+            request.setAttribute("error", "New password must be at least 6 characters");
             request.getRequestDispatcher("/views/customer/changePassword.jsp").forward(request, response);
             return;
         }
@@ -259,10 +259,10 @@ public class AuthServlet extends HttpServlet {
         boolean success = userDAO.changePassword(user.getUserId(), oldPassword, newPassword);
 
         if (success) {
-            request.setAttribute("success", "Đổi mật khẩu thành công!");
+            request.setAttribute("success", "Password changed successfully!");
             request.getRequestDispatcher("/views/customer/changePassword.jsp").forward(request, response);
         } else {
-            request.setAttribute("error", "Mật khẩu hiện tại không đúng");
+            request.setAttribute("error", "Current password is incorrect");
             request.getRequestDispatcher("/views/customer/changePassword.jsp").forward(request, response);
         }
     }
@@ -277,7 +277,7 @@ public class AuthServlet extends HttpServlet {
 
         if (username == null || username.trim().isEmpty()
                 || email == null || email.trim().isEmpty()) {
-            request.setAttribute("error", "Vui lòng nhập tên đăng nhập và email");
+            request.setAttribute("error", "Please enter your username and email");
             request.setAttribute("phase", 1);
             request.getRequestDispatcher("/views/forgetPassword.jsp").forward(request, response);
             return;
@@ -286,7 +286,7 @@ public class AuthServlet extends HttpServlet {
         User user = userDAO.findByUsernameAndEmail(username.trim(), email.trim());
 
         if (user == null) {
-            request.setAttribute("error", "Tên đăng nhập hoặc email không khớp");
+            request.setAttribute("error", "Username or email does not match");
             request.setAttribute("phase", 1);
             request.getRequestDispatcher("/views/forgetPassword.jsp").forward(request, response);
             return;
@@ -307,7 +307,7 @@ public class AuthServlet extends HttpServlet {
         HttpSession session = request.getSession(false);
 
         if (session == null || session.getAttribute("resetUserId") == null) {
-            request.setAttribute("error", "Phiên xác thực hết hạn, vui lòng thử lại");
+            request.setAttribute("error", "Session expired. Please try again.");
             request.setAttribute("phase", 1);
             request.getRequestDispatcher("/views/forgetPassword.jsp").forward(request, response);
             return;
@@ -317,21 +317,21 @@ public class AuthServlet extends HttpServlet {
         String confirmPassword = request.getParameter("confirmPassword");
 
         if (newPassword == null || newPassword.trim().isEmpty()) {
-            request.setAttribute("error", "Vui lòng nhập mật khẩu mới");
+            request.setAttribute("error", "Please enter a new password");
             request.setAttribute("phase", 2);
             request.getRequestDispatcher("/views/forgetPassword.jsp").forward(request, response);
             return;
         }
 
         if (!newPassword.equals(confirmPassword)) {
-            request.setAttribute("error", "Mật khẩu xác nhận không khớp");
+            request.setAttribute("error", "Passwords do not match");
             request.setAttribute("phase", 2);
             request.getRequestDispatcher("/views/forgetPassword.jsp").forward(request, response);
             return;
         }
 
         if (newPassword.length() < 6) {
-            request.setAttribute("error", "Mật khẩu phải có ít nhất 6 ký tự");
+            request.setAttribute("error", "Password must be at least 6 characters");
             request.setAttribute("phase", 2);
             request.getRequestDispatcher("/views/forgetPassword.jsp").forward(request, response);
             return;
@@ -343,10 +343,10 @@ public class AuthServlet extends HttpServlet {
         session.removeAttribute("resetUserId");
 
         if (success) {
-            session.setAttribute("successMessage", "Đặt lại mật khẩu thành công! Vui lòng đăng nhập.");
+            session.setAttribute("successMessage", "Password reset successfully! Please sign in.");
             response.sendRedirect(request.getContextPath() + "/auth?action=login");
         } else {
-            request.setAttribute("error", "Đặt lại mật khẩu thất bại, vui lòng thử lại");
+            request.setAttribute("error", "Failed to reset password. Please try again.");
             request.setAttribute("phase", 1);
             request.getRequestDispatcher("/views/forgetPassword.jsp").forward(request, response);
         }
