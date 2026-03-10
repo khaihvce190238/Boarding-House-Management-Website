@@ -119,7 +119,7 @@ public class CustomerServlet extends HttpServlet {
         String phone    = request.getParameter("phone");
 
         if (fullName == null || fullName.trim().isEmpty()) {
-            request.setAttribute("error", "Họ và tên không được để trống");
+            request.setAttribute("error", "Full name is required");
             request.setAttribute("user", user);
             request.getRequestDispatcher("/views/customer/profileUpdate.jsp")
                     .forward(request, response);
@@ -134,10 +134,10 @@ public class CustomerServlet extends HttpServlet {
 
         if (success) {
             session.setAttribute("user", user);
-            session.setAttribute("successMessage", "Cập nhật thông tin thành công!");
+            session.setAttribute("successMessage", "Profile updated successfully!");
             response.sendRedirect(request.getContextPath() + "/customer?action=profile");
         } else {
-            request.setAttribute("error", "Cập nhật thất bại, vui lòng thử lại");
+            request.setAttribute("error", "Update failed. Please try again.");
             request.setAttribute("user", user);
             request.getRequestDispatcher("/views/customer/profileUpdate.jsp")
                     .forward(request, response);
