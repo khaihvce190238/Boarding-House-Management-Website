@@ -17,7 +17,7 @@ import java.time.LocalDate;
 public class ServiceDAO extends DBContext {
 
     // =============================
-    // GET ALL SERVICES
+    // GET ALL SERVICES (active only – customer-facing)
     // =============================
     public List<Service> getAllServices() {
 
@@ -49,6 +49,52 @@ public class ServiceDAO extends DBContext {
         }
 
         return list;
+    }
+
+    // =============================
+    // GET ALL SERVICES (admin – includes hidden)
+    // =============================
+    public List<Service> getAllServicesAdmin() {
+
+        List<Service> list = new ArrayList<>();
+
+        String sql = "SELECT * FROM service ORDER BY is_deleted ASC, service_id ASC";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                Service s = new Service();
+                s.setServiceId(rs.getInt("service_id"));
+                s.setServiceName(rs.getString("service_name"));
+                s.setCategoryId(rs.getInt("category_id"));
+                s.setDescription(rs.getString("description"));
+                s.setImage(rs.getString("image"));
+                s.setIsDeleted(rs.getBoolean("is_deleted"));
+                list.add(s);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+    // =============================
+    // RESTORE SERVICE (undo soft-delete)
+    // =============================
+    public void restoreService(int id) {
+
+        String sql = "UPDATE service SET is_deleted = 0 WHERE service_id = ?";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setInt(1, id);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     // =============================

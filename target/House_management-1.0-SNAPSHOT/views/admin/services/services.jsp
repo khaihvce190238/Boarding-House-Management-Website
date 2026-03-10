@@ -32,8 +32,21 @@
                         <i class="bi bi-grid-3x3-gap-fill text-primary fs-4"></i>
                     </div>
                     <div>
-                        <div class="fs-4 fw-bold">${services.size()}</div>
-                        <div class="text-muted small">Total Services</div>
+                        <div class="fs-4 fw-bold">${services.size() - hiddenCount}</div>
+                        <div class="text-muted small">Active Services</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="rounded-circle p-3" style="background:#fee2e2">
+                        <i class="bi bi-eye-slash-fill fs-4" style="color:#dc2626"></i>
+                    </div>
+                    <div>
+                        <div class="fs-4 fw-bold text-danger">${hiddenCount}</div>
+                        <div class="text-muted small">Hidden Services</div>
                     </div>
                 </div>
             </div>
@@ -56,19 +69,27 @@
                                     <th>Service Name</th>
                                     <th>Category</th>
                                     <th>Description</th>
+                                    <th class="text-center">Status</th>
                                     <th class="text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <c:forEach var="svc" items="${services}" varStatus="st">
-                                    <tr>
+                                    <tr class="${svc.isDeleted ? 'table-secondary text-muted' : ''}">
                                         <td class="ps-4 text-muted">${st.count}</td>
                                         <td>
                                             <div class="d-flex align-items-center gap-2">
-                                                <div class="rounded-circle bg-primary bg-opacity-10 p-2">
-                                                    <i class="bi bi-lightning-charge text-primary"></i>
+                                                <div class="rounded-circle p-2
+                                                     ${svc.isDeleted
+                                                         ? 'bg-secondary bg-opacity-10'
+                                                         : 'bg-primary bg-opacity-10'}">
+                                                    <i class="bi bi-lightning-charge
+                                                       ${svc.isDeleted ? 'text-secondary' : 'text-primary'}"></i>
                                                 </div>
-                                                <span class="fw-semibold">${svc.serviceName}</span>
+                                                <span class="fw-semibold
+                                                     ${svc.isDeleted ? 'text-decoration-line-through text-muted' : ''}">
+                                                    ${svc.serviceName}
+                                                </span>
                                             </div>
                                         </td>
                                         <td>
@@ -78,23 +99,44 @@
                                         </td>
                                         <td class="text-muted small">
                                             <c:choose>
-                                                <c:when test="${not empty svc.description}">
-                                                    ${svc.description}
-                                                </c:when>
+                                                <c:when test="${not empty svc.description}">${svc.description}</c:when>
                                                 <c:otherwise>—</c:otherwise>
                                             </c:choose>
                                         </td>
                                         <td class="text-center">
+                                            <c:choose>
+                                                <c:when test="${svc.isDeleted}">
+                                                    <span class="badge rounded-pill bg-danger bg-opacity-10 text-danger border border-danger-subtle px-3">
+                                                        <i class="bi bi-eye-slash me-1"></i>Hidden
+                                                    </span>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <span class="badge rounded-pill bg-success bg-opacity-10 text-success border border-success-subtle px-3">
+                                                        <i class="bi bi-eye me-1"></i>Active
+                                                    </span>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </td>
+                                        <td class="text-center">
                                             <div class="d-flex justify-content-center gap-1">
-                                                <a href="${pageContext.request.contextPath}/services?action=edit&id=${svc.serviceId}"
-                                                   class="btn btn-sm btn-outline-warning" title="Edit">
-                                                    <i class="bi bi-pencil"></i>
-                                                </a>
-                                                <a href="${pageContext.request.contextPath}/services?action=delete&id=${svc.serviceId}"
-                                                   class="btn btn-sm btn-outline-danger" title="Delete"
-                                                   onclick="return confirm('Delete service: ${svc.serviceName}?')">
-                                                    <i class="bi bi-trash"></i>
-                                                </a>
+                                                <c:if test="${not svc.isDeleted}">
+                                                    <a href="${pageContext.request.contextPath}/services?action=edit&id=${svc.serviceId}"
+                                                       class="btn btn-sm btn-outline-warning" title="Edit">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </a>
+                                                    <a href="${pageContext.request.contextPath}/services?action=hide&id=${svc.serviceId}"
+                                                       class="btn btn-sm btn-outline-danger" title="Hide from customers"
+                                                       onclick="return confirm('Hide service \'${svc.serviceName}\' from customers?')">
+                                                        <i class="bi bi-eye-slash me-1"></i>Hide
+                                                    </a>
+                                                </c:if>
+                                                <c:if test="${svc.isDeleted}">
+                                                    <a href="${pageContext.request.contextPath}/services?action=restore&id=${svc.serviceId}"
+                                                       class="btn btn-sm btn-outline-success" title="Restore service"
+                                                       onclick="return confirm('Restore service \'${svc.serviceName}\'?')">
+                                                        <i class="bi bi-eye me-1"></i>Restore
+                                                    </a>
+                                                </c:if>
                                             </div>
                                         </td>
                                     </tr>

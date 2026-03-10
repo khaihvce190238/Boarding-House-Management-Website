@@ -80,7 +80,11 @@ public class ServiceServlet extends HttpServlet {
                 break;
 
             case "delete":
-                deleteService(request, response);
+            case "hide":
+                hideService(request, response);
+                break;
+            case "restore":
+                restoreService(request, response);
                 break;
 
             case "detail":
@@ -222,10 +226,12 @@ public class ServiceServlet extends HttpServlet {
         //     return;
         // }
 
-        List<Service>       list       = serviceDAO.getAllServices();
+        List<Service>       list       = serviceDAO.getAllServicesAdmin();
         List<PriceCategory> categories = priceDAO.getAllPriceCategories();
+        long hiddenCount = list.stream().filter(s -> s.isIsDeleted()).count();
         request.setAttribute("services",       list);
         request.setAttribute("priceCategories", categories);
+        request.setAttribute("hiddenCount",    hiddenCount);
         request.getRequestDispatcher("/views/admin/services/services.jsp")
                 .forward(request, response);
     }
@@ -412,12 +418,21 @@ public class ServiceServlet extends HttpServlet {
         response.sendRedirect(request.getContextPath() + "/services?action=adminList");
     }
 
-    // ================= ADMIN: DELETE =================
-    private void deleteService(HttpServletRequest request, HttpServletResponse response)
+    // ================= ADMIN: HIDE (soft-delete) =================
+    private void hideService(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
 
         int id = Integer.parseInt(request.getParameter("id"));
-        serviceDAO.deleteService(id);
+        serviceDAO.deleteService(id);   // sets is_deleted = 1
+        response.sendRedirect(request.getContextPath() + "/services?action=adminList");
+    }
+
+    // ================= ADMIN: RESTORE =================
+    private void restoreService(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+
+        int id = Integer.parseInt(request.getParameter("id"));
+        serviceDAO.restoreService(id);  // sets is_deleted = 0
         response.sendRedirect(request.getContextPath() + "/services?action=adminList");
     }
 
