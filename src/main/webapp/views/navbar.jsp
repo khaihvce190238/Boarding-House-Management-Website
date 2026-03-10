@@ -85,10 +85,20 @@
 
                                 <li>
                                     <a class="dropdown-item"
-                                       href="${pageContext.request.contextPath}/user?action=profile">
-                                        Profile
+                                       href="${pageContext.request.contextPath}/customer?action=profile">
+                                        <i class="bi bi-person me-2"></i>Hồ sơ cá nhân
                                     </a>
                                 </li>
+
+                                <%-- Manage Users: chỉ hiện cho admin/staff --%>
+                                <c:if test="${sessionScope.user.role == 'admin' or sessionScope.user.role == 'staff'}">
+                                <li>
+                                    <a class="dropdown-item"
+                                       href="${pageContext.request.contextPath}/user?action=list">
+                                        <i class="bi bi-people me-2"></i>Quản lý người dùng
+                                    </a>
+                                </li>
+                                </c:if>
 
                                 <li>
                                     <a class="dropdown-item"

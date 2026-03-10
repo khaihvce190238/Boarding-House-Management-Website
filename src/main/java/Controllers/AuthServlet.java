@@ -24,7 +24,7 @@ public class AuthServlet extends HttpServlet {
         String action = request.getParameter("action");
 
         if (action == null) {
-            response.sendRedirect(request.getContextPath() + "/views/guest/dashboard.jsp");
+            showLogin(request, response);
             return;
         }
 

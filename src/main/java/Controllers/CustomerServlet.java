@@ -16,6 +16,7 @@ public class CustomerServlet extends HttpServlet {
         userDAO = new UserDAO();
     }
 
+    // ===================== GET =====================
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -32,61 +33,114 @@ public class CustomerServlet extends HttpServlet {
                 showProfile(request, response);
                 break;
 
+            case "editProfile":
+                showEditProfile(request, response);
+                break;
+
             default:
                 response.sendError(HttpServletResponse.SC_NOT_FOUND);
         }
     }
 
+    // ===================== POST =====================
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
         String action = request.getParameter("action");
 
-        if ("update".equals(action)) {
-            updateProfile(request, response);
+        if (action == null) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
+
+        switch (action) {
+
+            case "updateProfile":
+                updateProfile(request, response);
+                break;
+
+            default:
+                response.sendError(HttpServletResponse.SC_NOT_FOUND);
         }
     }
+
+    // ===================== VIEW PROFILE =====================
 
     private void showProfile(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
         HttpSession session = request.getSession(false);
-
         if (session == null || session.getAttribute("user") == null) {
-            response.sendRedirect("views/login.jsp");
+            response.sendRedirect(request.getContextPath() + "/auth?action=login");
             return;
         }
 
         User user = (User) session.getAttribute("user");
-
         request.setAttribute("user", user);
 
         request.getRequestDispatcher("/views/customer/profile.jsp")
                 .forward(request, response);
     }
 
-    private void updateProfile(HttpServletRequest request, HttpServletResponse response)
-            throws IOException {
+    // ===================== SHOW EDIT PROFILE FORM =====================
+
+    private void showEditProfile(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
 
         HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("user") == null) {
+            response.sendRedirect(request.getContextPath() + "/auth?action=login");
+            return;
+        }
 
-        if (session == null) {
-            response.sendRedirect("views/login.jsp");
+        User user = (User) session.getAttribute("user");
+        request.setAttribute("user", user);
+
+        request.getRequestDispatcher("/views/customer/profileUpdate.jsp")
+                .forward(request, response);
+    }
+
+    // ===================== UPDATE PROFILE =====================
+
+    private void updateProfile(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("user") == null) {
+            response.sendRedirect(request.getContextPath() + "/auth?action=login");
             return;
         }
 
         User user = (User) session.getAttribute("user");
 
-        user.setFullName(request.getParameter("fullName"));
-        user.setEmail(request.getParameter("email"));
-        user.setPhone(request.getParameter("phone"));
-        user.setImage(request.getParameter("image"));
+        String fullName = request.getParameter("fullName");
+        String email    = request.getParameter("email");
+        String phone    = request.getParameter("phone");
 
-        userDAO.updateUserById(user);
+        if (fullName == null || fullName.trim().isEmpty()) {
+            request.setAttribute("error", "Họ và tên không được để trống");
+            request.setAttribute("user", user);
+            request.getRequestDispatcher("/views/customer/profileUpdate.jsp")
+                    .forward(request, response);
+            return;
+        }
 
-        session.setAttribute("user", user);
+        user.setFullName(fullName.trim());
+        user.setEmail(email != null ? email.trim() : "");
+        user.setPhone(phone != null ? phone.trim() : "");
 
-        response.sendRedirect("customer?action=profile");
+        boolean success = userDAO.updateUserById(user);
+
+        if (success) {
+            session.setAttribute("user", user);
+            session.setAttribute("successMessage", "Cập nhật thông tin thành công!");
+            response.sendRedirect(request.getContextPath() + "/customer?action=profile");
+        } else {
+            request.setAttribute("error", "Cập nhật thất bại, vui lòng thử lại");
+            request.setAttribute("user", user);
+            request.getRequestDispatcher("/views/customer/profileUpdate.jsp")
+                    .forward(request, response);
+        }
     }
 }

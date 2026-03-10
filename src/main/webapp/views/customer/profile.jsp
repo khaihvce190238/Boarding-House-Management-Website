@@ -1,83 +1,189 @@
-<%-- 
-    Document   : profile
-    Created on : Mar 4, 2026, 8:56:16 AM
-    Author     : huuda
---%>
-
-
-<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ taglib prefix="t" tagdir="/WEB-INF/tags" %>
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hồ sơ cá nhân - AKDD House</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f4f6f9; }
+        .profile-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 16px;
+            color: white;
+            padding: 32px 24px;
+            position: relative;
+            overflow: hidden;
+        }
+        .profile-header::after {
+            content: '';
+            position: absolute;
+            top: -40px; right: -40px;
+            width: 160px; height: 160px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.08);
+        }
+        .avatar-wrapper {
+            width: 100px; height: 100px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 42px;
+            border: 3px solid rgba(255,255,255,0.4);
+            flex-shrink: 0;
+        }
+        .info-card { border-radius: 14px; border: none; }
+        .info-row {
+            display: flex;
+            align-items: flex-start;
+            padding: 14px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .info-row:last-child { border-bottom: none; }
+        .info-label {
+            width: 160px;
+            color: #6c757d;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            flex-shrink: 0;
+        }
+        .info-value { font-weight: 500; color: #212529; }
+        .role-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .role-admin    { background: #fff3cd; color: #856404; }
+        .role-staff    { background: #cff4fc; color: #0a6071; }
+        .role-customer { background: #d1e7dd; color: #0a3622; }
+        .btn-edit {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+        }
+        .btn-edit:hover { background: linear-gradient(135deg, #5568d6, #6a3fa0); }
+    </style>
+</head>
+<body>
+    <%@ include file="../navbar.jsp" %>
 
-<t:layout>
+    <div class="container mt-4 mb-5" style="max-width: 720px;">
 
-<h2 class="mb-4">User Profile</h2>
+        <%-- Success message --%>
+        <c:if test="${not empty sessionScope.successMessage}">
+            <div class="alert alert-success d-flex align-items-center mb-3" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                <span>${sessionScope.successMessage}</span>
+            </div>
+            <% session.removeAttribute("successMessage"); %>
+        </c:if>
 
-<div class="row justify-content-center">
+        <%-- Profile header card --%>
+        <div class="profile-header mb-4 d-flex align-items-center gap-4">
+            <div class="avatar-wrapper">
+                <i class="bi bi-person-fill"></i>
+            </div>
+            <div>
+                <h4 class="fw-bold mb-1">${user.fullName}</h4>
+                <div class="opacity-75 small mb-2">@${user.username}</div>
+                <span class="role-badge
+                    ${user.role == 'admin' ? 'role-admin' :
+                      user.role == 'staff' ? 'role-staff' : 'role-customer'}">
+                    ${user.role == 'admin' ? 'Quản trị viên' :
+                      user.role == 'staff' ? 'Nhân viên' : 'Khách thuê'}
+                </span>
+            </div>
+        </div>
 
-    <div class="col-md-6">
+        <%-- Info card --%>
+        <div class="card info-card shadow-sm mb-4">
+            <div class="card-body px-4 py-3">
 
-        <div class="card shadow">
-
-            <div class="card-body">
-
-                <div class="text-center mb-3">
-                    <img src="${pageContext.request.contextPath}/assets/images/user/avatar.png"
-                         class="rounded-circle"
-                         width="120">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold text-muted mb-0">
+                        <i class="bi bi-person-lines-fill me-2"></i>Thông tin cá nhân
+                    </h6>
+                    <a href="${pageContext.request.contextPath}/customer?action=editProfile"
+                       class="btn btn-edit btn-primary btn-sm">
+                        <i class="bi bi-pencil-square me-1"></i>Chỉnh sửa
+                    </a>
                 </div>
 
-                <form action="${pageContext.request.contextPath}/user" method="post">
+                <div class="info-row">
+                    <div class="info-label"><i class="bi bi-person me-2"></i>Họ và tên</div>
+                    <div class="info-value">${not empty user.fullName ? user.fullName : '—'}</div>
+                </div>
 
-                    <input type="hidden" name="action" value="updateProfile"/>
+                <div class="info-row">
+                    <div class="info-label"><i class="bi bi-at me-2"></i>Tên đăng nhập</div>
+                    <div class="info-value text-muted">${user.username}</div>
+                </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">Full Name</label>
-                        <input type="text"
-                               name="fullName"
-                               class="form-control"
-                               value="${sessionScope.user.fullName}"
-                               required>
+                <div class="info-row">
+                    <div class="info-label"><i class="bi bi-envelope me-2"></i>Email</div>
+                    <div class="info-value">
+                        <c:choose>
+                            <c:when test="${not empty user.email}">
+                                <a href="mailto:${user.email}" class="text-decoration-none">${user.email}</a>
+                            </c:when>
+                            <c:otherwise><span class="text-muted">Chưa cập nhật</span></c:otherwise>
+                        </c:choose>
                     </div>
+                </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">Username</label>
-                        <input type="text"
-                               class="form-control"
-                               value="${sessionScope.user.username}"
-                               readonly>
+                <div class="info-row">
+                    <div class="info-label"><i class="bi bi-telephone me-2"></i>Điện thoại</div>
+                    <div class="info-value">
+                        <c:choose>
+                            <c:when test="${not empty user.phone}">
+                                <a href="tel:${user.phone}" class="text-decoration-none">${user.phone}</a>
+                            </c:when>
+                            <c:otherwise><span class="text-muted">Chưa cập nhật</span></c:otherwise>
+                        </c:choose>
                     </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Email</label>
-                        <input type="email"
-                               name="email"
-                               class="form-control"
-                               value="${sessionScope.user.email}">
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Phone</label>
-                        <input type="text"
-                               name="phone"
-                               class="form-control"
-                               value="${sessionScope.user.phone}">
-                    </div>
-
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-primary">
-                            Update Profile
-                        </button>
-                    </div>
-
-                </form>
+                </div>
 
             </div>
+        </div>
 
+        <%-- Quick actions --%>
+        <div class="row g-3">
+            <div class="col-sm-6">
+                <a href="${pageContext.request.contextPath}/customer?action=editProfile"
+                   class="card info-card shadow-sm text-decoration-none d-flex flex-row align-items-center p-3 gap-3">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center"
+                         style="width:44px;height:44px;background:#e8eaff;flex-shrink:0">
+                        <i class="bi bi-pencil" style="color:#667eea;font-size:18px"></i>
+                    </div>
+                    <div>
+                        <div class="fw-semibold text-dark small">Chỉnh sửa hồ sơ</div>
+                        <div class="text-muted" style="font-size:12px">Cập nhật thông tin cá nhân</div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-sm-6">
+                <a href="${pageContext.request.contextPath}/auth?action=changePassword"
+                   class="card info-card shadow-sm text-decoration-none d-flex flex-row align-items-center p-3 gap-3">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center"
+                         style="width:44px;height:44px;background:#f0fdf4;flex-shrink:0">
+                        <i class="bi bi-shield-lock" style="color:#28a745;font-size:18px"></i>
+                    </div>
+                    <div>
+                        <div class="fw-semibold text-dark small">Đổi mật khẩu</div>
+                        <div class="text-muted" style="font-size:12px">Cập nhật mật khẩu bảo mật</div>
+                    </div>
+                </a>
+            </div>
         </div>
 
     </div>
 
-</div>
-
-</t:layout>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,13 +1,5 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
- */
 package Controllers;
 
-/**
- *
- * @author huudanh
- */
 import DALs.UserDAO;
 import Models.User;
 
@@ -25,6 +17,7 @@ public class UserServlet extends HttpServlet {
         userDAO = new UserDAO();
     }
 
+    // ===================== GET =====================
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -49,15 +42,12 @@ public class UserServlet extends HttpServlet {
                 deleteUser(request, response);
                 break;
 
-            case "logout":
-                logout(request, response);
-                break;
-
             default:
                 response.sendError(HttpServletResponse.SC_NOT_FOUND);
         }
     }
 
+    // ===================== POST =====================
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -71,17 +61,6 @@ public class UserServlet extends HttpServlet {
 
         switch (action) {
 
-            case "login":
-                login(request, response);
-                break;
-
-            case "register":
-                register(request, response);
-                break;
-            case "updateProfile":
-                updateProfile(request, response);
-                break;
-
             case "update":
                 updateUser(request, response);
                 break;
@@ -91,124 +70,148 @@ public class UserServlet extends HttpServlet {
         }
     }
 
-    private void updateProfile(HttpServletRequest request, HttpServletResponse response)
-            throws IOException {
-
-        HttpSession session = request.getSession();
-        User user = (User) session.getAttribute("user");
-
-        user.setFullName(request.getParameter("fullName"));
-        user.setEmail(request.getParameter("email"));
-        user.setPhone(request.getParameter("phone"));
-
-        userDAO.updateUserById(user);
-
-        session.setAttribute("user", user);
-
-        response.sendRedirect("user?action=profile");
-    }
-
-    private void login(HttpServletRequest request, HttpServletResponse response)
-            throws IOException, ServletException {
-
-        String username = request.getParameter("username");
-        String password = request.getParameter("password");
-
-        User user = userDAO.login(username, password);
-
-        if (user != null) {
-            request.getSession().setAttribute("user", user);
-            response.sendRedirect("dashboard");
-        } else {
-            request.setAttribute("error", "Invalid username or password");
-            request.getRequestDispatcher("/views/login.jsp")
-                    .forward(request, response);
-        }
-    }
-
-    private void logout(HttpServletRequest request, HttpServletResponse response)
-            throws IOException {
-
-        request.getSession().invalidate();
-        response.sendRedirect("views/login.jsp");
-    }
-
-    private void register(HttpServletRequest request, HttpServletResponse response)
-            throws IOException, ServletException {
-
-        String username = request.getParameter("username");
-
-        if (userDAO.existsByUsername(username)) {
-            request.setAttribute("error", "Username already exists");
-            request.getRequestDispatcher("/views/register.jsp")
-                    .forward(request, response);
-            return;
-        }
-
-        User user = new User();
-        user.setUsername(username);
-        user.setPassword(request.getParameter("password"));
-        user.setFullName(request.getParameter("fullName"));
-        user.setEmail(request.getParameter("email"));
-        user.setPhone(request.getParameter("phone"));
-        user.setRole(request.getParameter("role"));
-        user.setImage(request.getParameter("image"));
-
-        boolean success = userDAO.register(user);
-
-        if (success) {
-            response.sendRedirect("login.jsp");
-        } else {
-            request.setAttribute("error", "Registration failed");
-            request.getRequestDispatcher("/views/register.jsp")
-                    .forward(request, response);
-        }
-    }
+    // ===================== LIST (Manage Profile) =====================
 
     private void listUsers(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
+        HttpSession session = request.getSession(false);
+        if (!isAdminOrStaff(session)) {
+            response.sendRedirect(request.getContextPath() + "/auth?action=login");
+            return;
+        }
+
+        String search = request.getParameter("search");
+        String roleFilter = request.getParameter("role");
+
         List<User> users = userDAO.getAllUsers();
+
+        // Filter in memory (simple approach — no extra DAO method needed)
+        if (search != null && !search.trim().isEmpty()) {
+            String kw = search.trim().toLowerCase();
+            users.removeIf(u ->
+                !u.getUsername().toLowerCase().contains(kw)
+                && (u.getFullName() == null || !u.getFullName().toLowerCase().contains(kw))
+                && (u.getEmail() == null || !u.getEmail().toLowerCase().contains(kw))
+            );
+        }
+        if (roleFilter != null && !roleFilter.trim().isEmpty()) {
+            users.removeIf(u -> !roleFilter.equals(u.getRole()));
+        }
+
         request.setAttribute("users", users);
-        request.getRequestDispatcher("/views/customer/list.jsp")
+        request.setAttribute("search", search);
+        request.setAttribute("roleFilter", roleFilter);
+
+        request.getRequestDispatcher("/views/admin/users/users.jsp")
                 .forward(request, response);
     }
+
+    // ===================== SHOW EDIT FORM =====================
 
     private void showEdit(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        int id = Integer.parseInt(request.getParameter("id"));
-        User user = userDAO.getUserById(id);
+        HttpSession session = request.getSession(false);
+        if (!isAdminOrStaff(session)) {
+            response.sendRedirect(request.getContextPath() + "/auth?action=login");
+            return;
+        }
 
-        request.setAttribute("user", user);
-        request.getRequestDispatcher("/views/customer/edit.jsp")
-                .forward(request, response);
+        String idStr = request.getParameter("id");
+        if (idStr == null) {
+            response.sendRedirect(request.getContextPath() + "/user?action=list");
+            return;
+        }
+
+        try {
+            int id = Integer.parseInt(idStr);
+            User user = userDAO.getUserById(id);
+
+            if (user == null) {
+                response.sendRedirect(request.getContextPath() + "/user?action=list");
+                return;
+            }
+
+            request.setAttribute("editUser", user);
+            request.getRequestDispatcher("/views/admin/users/editUser.jsp")
+                    .forward(request, response);
+
+        } catch (NumberFormatException e) {
+            response.sendRedirect(request.getContextPath() + "/user?action=list");
+        }
     }
+
+    // ===================== UPDATE USER =====================
 
     private void updateUser(HttpServletRequest request, HttpServletResponse response)
-            throws IOException {
+            throws ServletException, IOException {
 
-        User user = new User();
-        user.setUserId(Integer.parseInt(request.getParameter("userId")));
-        user.setUsername(request.getParameter("username"));
-        user.setFullName(request.getParameter("fullName"));
-        user.setEmail(request.getParameter("email"));
-        user.setPhone(request.getParameter("phone"));
-        user.setRole(request.getParameter("role"));
-        user.setImage(request.getParameter("image"));
-        user.setPassword(request.getParameter("password")); // nếu rỗng sẽ không update
+        HttpSession session = request.getSession(false);
+        if (!isAdminOrStaff(session)) {
+            response.sendRedirect(request.getContextPath() + "/auth?action=login");
+            return;
+        }
 
-        userDAO.updateUserById(user);
+        try {
+            User user = new User();
+            user.setUserId(Integer.parseInt(request.getParameter("userId")));
+            user.setUsername(request.getParameter("username"));
+            user.setFullName(request.getParameter("fullName"));
+            user.setEmail(request.getParameter("email"));
+            user.setPhone(request.getParameter("phone"));
+            user.setRole(request.getParameter("role"));
+            user.setImage(request.getParameter("image") != null
+                    ? request.getParameter("image") : "default.png");
 
-        response.sendRedirect("user?action=list");
+            String newPassword = request.getParameter("password");
+            user.setPassword(newPassword != null ? newPassword.trim() : "");
+
+            boolean success = userDAO.updateUserById(user);
+
+            if (success) {
+                session.setAttribute("adminSuccess", "Cập nhật người dùng thành công!");
+            } else {
+                session.setAttribute("adminError", "Cập nhật thất bại, vui lòng thử lại");
+            }
+
+            response.sendRedirect(request.getContextPath() + "/user?action=list");
+
+        } catch (NumberFormatException e) {
+            response.sendRedirect(request.getContextPath() + "/user?action=list");
+        }
     }
+
+    // ===================== DELETE USER =====================
 
     private void deleteUser(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
 
-        int id = Integer.parseInt(request.getParameter("id"));
-        userDAO.deleteSoft(id);
+        HttpSession session = request.getSession(false);
+        if (!isAdminOrStaff(session)) {
+            response.sendRedirect(request.getContextPath() + "/auth?action=login");
+            return;
+        }
 
-        response.sendRedirect("user?action=list");
+        String idStr = request.getParameter("id");
+        if (idStr != null) {
+            try {
+                int id = Integer.parseInt(idStr);
+                userDAO.deleteSoft(id);
+                session.setAttribute("adminSuccess", "Xóa người dùng thành công!");
+            } catch (NumberFormatException ignored) {}
+        }
+
+        response.sendRedirect(request.getContextPath() + "/user?action=list");
+    }
+
+    // ===================== HELPER =====================
+
+    private boolean isAdminOrStaff(HttpSession session) {
+        if (session == null) return false;
+        User u = (User) session.getAttribute("user");
+        if (u == null) return false;
+        return "admin".equalsIgnoreCase(u.getRole())
+                || "staff".equalsIgnoreCase(u.getRole());
     }
 }

@@ -19,16 +19,17 @@ public class LoginFilter implements Filter {
         boolean loggedIn = (session != null && session.getAttribute("user") != null);
 
         boolean isPublicPath =
-                path.contains("/auth")              // tất cả endpoint auth
-                || path.endsWith("login")
-                || path.endsWith("register")
-                || path.endsWith("forgetPassword")
-                || path.endsWith("home")
-                || path.endsWith("/")
-                || path.contains("/views/guest/")   // trang khách
-                || path.contains("assets/")         // static resources
+                path.contains("/auth")              // tất cả endpoint auth (servlet)
+                || path.contains("/login")           // /login URL
+                || path.contains("/views/login")     // views/login.jsp trực tiếp
+                || path.contains("/views/register")
+                || path.contains("/views/forget")
+                || path.contains("/views/guest/")    // trang khách
+                || path.endsWith("/")                // trang chủ
+                || path.contains("assets/")          // static resources
                 || path.endsWith(".css")
                 || path.endsWith(".js")
+                || path.endsWith(".html")
                 || path.endsWith(".png")
                 || path.endsWith(".jpg")
                 || path.endsWith(".jpeg")
