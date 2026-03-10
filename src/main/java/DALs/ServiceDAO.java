@@ -156,7 +156,8 @@ public class ServiceDAO extends DBContext {
     // =============================
     public void addUsage(ServiceUsage u) {
 
-        String sql = "INSERT INTO service_usage(contract_id, service_id, quantity, usage_date, billed) VALUES(?,?,?,?,0)";
+        String sql = "INSERT INTO service_usage(contract_id, service_id, quantity, usage_date, billed, status) "
+                + "VALUES(?,?,?,?,0,'approved')";
 
         try {
 
@@ -281,52 +282,7 @@ public class ServiceDAO extends DBContext {
     // GET ALL USAGE WITH DETAILS (admin: request list)
     // =============================
     public List<ServiceUsage> getAllUsageWithDetails() {
-
-        List<ServiceUsage> list = new ArrayList<>();
-
-        String sql = "SELECT su.usage_id, su.contract_id, su.service_id, su.quantity, "
-                + "su.usage_date, su.billed, "
-                + "s.service_name, r.room_number, "
-                + "ph.price_amount AS unit_price "
-                + "FROM service_usage su "
-                + "JOIN service s ON su.service_id = s.service_id "
-                + "JOIN contract c ON su.contract_id = c.contract_id "
-                + "JOIN room r ON c.room_id = r.room_id "
-                + "LEFT JOIN price_history ph ON s.category_id = ph.category_id "
-                + "  AND ph.effective_from = ( "
-                + "    SELECT TOP 1 effective_from FROM price_history "
-                + "    WHERE category_id = s.category_id "
-                + "    AND effective_from <= su.usage_date "
-                + "    ORDER BY effective_from DESC "
-                + "  ) "
-                + "ORDER BY su.usage_date DESC";
-
-        try {
-            PreparedStatement ps = connection.prepareStatement(sql);
-            ResultSet rs = ps.executeQuery();
-
-            while (rs.next()) {
-                ServiceUsage u = new ServiceUsage();
-                u.setUsageId(rs.getInt("usage_id"));
-                u.setContractId(rs.getInt("contract_id"));
-                u.setServiceId(rs.getInt("service_id"));
-                u.setQuantity(rs.getBigDecimal("quantity"));
-                u.setUsageDate(rs.getDate("usage_date").toLocalDate());
-                u.setBilled(rs.getBoolean("billed"));
-                u.setServiceName(rs.getString("service_name"));
-                u.setRoomNumber(rs.getString("room_number"));
-                BigDecimal unitPrice = rs.getBigDecimal("unit_price");
-                if (unitPrice == null) unitPrice = BigDecimal.ZERO;
-                u.setUnitPrice(unitPrice);
-                u.setTotalCost(unitPrice.multiply(u.getQuantity()));
-                list.add(u);
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        return list;
+        return getAllRequestsWithDetails(null);
     }
 
     // =============================
@@ -337,14 +293,16 @@ public class ServiceDAO extends DBContext {
         List<ServiceUsage> list = new ArrayList<>();
 
         String sql = "SELECT su.usage_id, su.contract_id, su.service_id, su.quantity, "
-                + "su.usage_date, su.billed, "
+                + "su.usage_date, su.billed, su.status, "
                 + "s.service_name, r.room_number, "
+                + "u2.full_name AS requester_name, "
                 + "ph.price_amount AS unit_price "
                 + "FROM service_usage su "
                 + "JOIN service s ON su.service_id = s.service_id "
                 + "JOIN contract c ON su.contract_id = c.contract_id "
                 + "JOIN room r ON c.room_id = r.room_id "
                 + "JOIN contract_user cu ON c.contract_id = cu.contract_id "
+                + "LEFT JOIN [user] u2 ON cu.user_id = u2.user_id AND cu.role = 'owner' "
                 + "LEFT JOIN price_history ph ON s.category_id = ph.category_id "
                 + "  AND ph.effective_from = ( "
                 + "    SELECT TOP 1 effective_from FROM price_history "
@@ -361,19 +319,7 @@ public class ServiceDAO extends DBContext {
             ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {
-                ServiceUsage u = new ServiceUsage();
-                u.setUsageId(rs.getInt("usage_id"));
-                u.setContractId(rs.getInt("contract_id"));
-                u.setServiceId(rs.getInt("service_id"));
-                u.setQuantity(rs.getBigDecimal("quantity"));
-                u.setUsageDate(rs.getDate("usage_date").toLocalDate());
-                u.setBilled(rs.getBoolean("billed"));
-                u.setServiceName(rs.getString("service_name"));
-                u.setRoomNumber(rs.getString("room_number"));
-                BigDecimal unitPrice = rs.getBigDecimal("unit_price");
-                if (unitPrice == null) unitPrice = BigDecimal.ZERO;
-                u.setUnitPrice(unitPrice);
-                u.setTotalCost(unitPrice.multiply(u.getQuantity()));
+                ServiceUsage u = mapUsageDetail(rs);
                 list.add(u);
             }
 
@@ -427,11 +373,160 @@ public class ServiceDAO extends DBContext {
 
             PreparedStatement ps = connection.prepareStatement(sql);
             ps.setInt(1, contractId);
-
             ps.executeUpdate();
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    // =============================
+    // GET ACTIVE CONTRACT ID BY USER
+    // =============================
+    public int getActiveContractIdByUserId(int userId) {
+
+        String sql = "SELECT TOP 1 c.contract_id "
+                + "FROM contract c "
+                + "JOIN contract_user cu ON c.contract_id = cu.contract_id "
+                + "WHERE cu.user_id = ? AND c.status = 'active' AND c.is_deleted = 0";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setInt(1, userId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("contract_id");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
+    // =============================
+    // CUSTOMER: REQUEST A SERVICE
+    // =============================
+    public boolean requestService(int contractId, int serviceId, BigDecimal quantity, LocalDate usageDate) {
+
+        String sql = "INSERT INTO service_usage(contract_id, service_id, quantity, usage_date, billed, status) "
+                + "VALUES(?,?,?,?,0,'pending')";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setInt(1, contractId);
+            ps.setInt(2, serviceId);
+            ps.setBigDecimal(3, quantity);
+            ps.setDate(4, Date.valueOf(usageDate));
+            ps.executeUpdate();
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // =============================
+    // ADMIN: GET ALL REQUESTS WITH DETAILS
+    // status filter: null = all, "pending" / "approved" / "rejected"
+    // =============================
+    public List<ServiceUsage> getAllRequestsWithDetails(String statusFilter) {
+
+        List<ServiceUsage> list = new ArrayList<>();
+
+        String sql = "SELECT su.usage_id, su.contract_id, su.service_id, su.quantity, "
+                + "su.usage_date, su.billed, su.status, "
+                + "s.service_name, r.room_number, "
+                + "u.full_name AS requester_name, "
+                + "ph.price_amount AS unit_price "
+                + "FROM service_usage su "
+                + "JOIN service s ON su.service_id = s.service_id "
+                + "JOIN contract c ON su.contract_id = c.contract_id "
+                + "JOIN room r ON c.room_id = r.room_id "
+                + "LEFT JOIN contract_user cu ON c.contract_id = cu.contract_id AND cu.role = 'owner' "
+                + "LEFT JOIN [user] u ON cu.user_id = u.user_id "
+                + "LEFT JOIN price_history ph ON s.category_id = ph.category_id "
+                + "  AND ph.effective_from = ( "
+                + "    SELECT TOP 1 effective_from FROM price_history "
+                + "    WHERE category_id = s.category_id "
+                + "    AND effective_from <= su.usage_date "
+                + "    ORDER BY effective_from DESC "
+                + "  ) "
+                + (statusFilter != null && !statusFilter.isEmpty()
+                        ? "WHERE su.status = ? " : "")
+                + "ORDER BY "
+                + "  CASE su.status WHEN 'pending' THEN 1 WHEN 'approved' THEN 2 ELSE 3 END, "
+                + "  su.usage_date DESC";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(sql);
+            if (statusFilter != null && !statusFilter.isEmpty()) {
+                ps.setString(1, statusFilter);
+            }
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                ServiceUsage u = mapUsageDetail(rs);
+                list.add(u);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+    // =============================
+    // ADMIN: APPROVE REQUEST
+    // =============================
+    public void approveRequest(int usageId) {
+
+        String sql = "UPDATE service_usage SET status = 'approved' WHERE usage_id = ?";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setInt(1, usageId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // =============================
+    // ADMIN: REJECT REQUEST
+    // =============================
+    public void rejectRequest(int usageId) {
+
+        String sql = "UPDATE service_usage SET status = 'rejected' WHERE usage_id = ?";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setInt(1, usageId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // =============================
+    // HELPER: Map result set to ServiceUsage with detail fields
+    // =============================
+    private ServiceUsage mapUsageDetail(ResultSet rs) throws SQLException {
+        ServiceUsage u = new ServiceUsage();
+        u.setUsageId(rs.getInt("usage_id"));
+        u.setContractId(rs.getInt("contract_id"));
+        u.setServiceId(rs.getInt("service_id"));
+        u.setQuantity(rs.getBigDecimal("quantity"));
+        u.setUsageDate(rs.getDate("usage_date").toLocalDate());
+        u.setBilled(rs.getBoolean("billed"));
+        u.setStatus(rs.getString("status"));
+        u.setServiceName(rs.getString("service_name"));
+        u.setRoomNumber(rs.getString("room_number"));
+        u.setRequesterName(rs.getString("requester_name"));
+        BigDecimal unitPrice = rs.getBigDecimal("unit_price");
+        if (unitPrice == null) unitPrice = BigDecimal.ZERO;
+        u.setUnitPrice(unitPrice);
+        u.setTotalCost(unitPrice.multiply(u.getQuantity()));
+        return u;
     }
 }

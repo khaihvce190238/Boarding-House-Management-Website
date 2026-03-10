@@ -36,7 +36,7 @@ public class ServiceServlet extends HttpServlet {
 
         switch (action) {
 
-            // ── Customer-facing ────────────────────────────────────────
+            // ── Customer ───────────────────────────────────────────────
             case "default":
             case "publicList":
                 showPublicList(request, response);
@@ -46,6 +46,10 @@ public class ServiceServlet extends HttpServlet {
                 showMyHistory(request, response);
                 break;
 
+            case "requestForm":
+                showRequestForm(request, response);
+                break;
+
             // ── Admin ──────────────────────────────────────────────────
             case "adminList":
                 showAdminList(request, response);
@@ -53,6 +57,18 @@ public class ServiceServlet extends HttpServlet {
 
             case "requestList":
                 showRequestList(request, response);
+                break;
+
+            case "manageRequests":
+                showManageRequests(request, response);
+                break;
+
+            case "approve":
+                approveRequest(request, response);
+                break;
+
+            case "reject":
+                rejectRequest(request, response);
                 break;
 
             case "create":
@@ -103,10 +119,13 @@ public class ServiceServlet extends HttpServlet {
             case "addUsage":
                 addUsage(request, response);
                 break;
+            case "submitRequest":
+                submitRequest(request, response);
+                break;
         }
     }
 
-    // ================= CUSTOMER: PUBLIC LIST =================
+    // ================= CUSTOMER: PUBLIC SERVICE LIST =================
     private void showPublicList(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
@@ -132,13 +151,77 @@ public class ServiceServlet extends HttpServlet {
                 .forward(request, response);
     }
 
+    // ================= CUSTOMER: SHOW REQUEST FORM =================
+    private void showRequestForm(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        User user = (User) request.getSession().getAttribute("user");
+        if (user == null) {
+            response.sendRedirect(request.getContextPath() + "/auth?action=login");
+            return;
+        }
+
+        int contractId = serviceDAO.getActiveContractIdByUserId(user.getUserId());
+        if (contractId == -1) {
+            request.setAttribute("errorMsg", "Bạn chưa có hợp đồng thuê phòng đang hoạt động.");
+        }
+
+        List<Service> services = serviceDAO.getAllServices();
+        String preselectedId = request.getParameter("serviceId");
+
+        request.setAttribute("contractId",    contractId);
+        request.setAttribute("services",      services);
+        request.setAttribute("preselectedId", preselectedId);
+        request.getRequestDispatcher("/views/customer/requestService.jsp")
+                .forward(request, response);
+    }
+
+    // ================= CUSTOMER: SUBMIT REQUEST (POST) =================
+    private void submitRequest(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+
+        User user = (User) request.getSession().getAttribute("user");
+        if (user == null) {
+            response.sendRedirect(request.getContextPath() + "/auth?action=login");
+            return;
+        }
+
+        int contractId = serviceDAO.getActiveContractIdByUserId(user.getUserId());
+        if (contractId == -1) {
+            response.sendRedirect(request.getContextPath()
+                    + "/services?action=requestForm&error=nocontract");
+            return;
+        }
+
+        int        serviceId = Integer.parseInt(request.getParameter("serviceId"));
+        BigDecimal quantity  = new BigDecimal(request.getParameter("quantity"));
+        LocalDate  useDate   = LocalDate.parse(request.getParameter("usageDate"));
+
+        boolean ok = serviceDAO.requestService(contractId, serviceId, quantity, useDate);
+
+        if (ok) {
+            response.sendRedirect(request.getContextPath()
+                    + "/services?action=myHistory&success=requested");
+        } else {
+            response.sendRedirect(request.getContextPath()
+                    + "/services?action=requestForm&error=failed");
+        }
+    }
+
     // ================= ADMIN: MANAGE SERVICES LIST =================
     private void showAdminList(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        List<Service> list = serviceDAO.getAllServices();
+        // --- ROLE CHECK (comment out to disable) ---
+        // User user = (User) request.getSession().getAttribute("user");
+        // if (user == null || (!user.getRole().equals("admin") && !user.getRole().equals("staff"))) {
+        //     response.sendRedirect(request.getContextPath() + "/auth?action=login");
+        //     return;
+        // }
+
+        List<Service>       list       = serviceDAO.getAllServices();
         List<PriceCategory> categories = priceDAO.getAllPriceCategories();
-        request.setAttribute("services", list);
+        request.setAttribute("services",       list);
         request.setAttribute("priceCategories", categories);
         request.getRequestDispatcher("/views/admin/services/services.jsp")
                 .forward(request, response);
@@ -148,12 +231,93 @@ public class ServiceServlet extends HttpServlet {
     private void showRequestList(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
+        // --- ROLE CHECK (comment out to disable) ---
+        // User user = (User) request.getSession().getAttribute("user");
+        // if (user == null || (!user.getRole().equals("admin") && !user.getRole().equals("staff"))) {
+        //     response.sendRedirect(request.getContextPath() + "/auth?action=login");
+        //     return;
+        // }
+
         List<ServiceUsage> usageList = serviceDAO.getAllUsageWithDetails();
-        List<Service> services = serviceDAO.getAllServices();
+        List<Service>      services  = serviceDAO.getAllServices();
         request.setAttribute("usageList", usageList);
-        request.setAttribute("services", services);
+        request.setAttribute("services",  services);
         request.getRequestDispatcher("/views/admin/services/requestList.jsp")
                 .forward(request, response);
+    }
+
+    // ================= ADMIN: MANAGE REQUESTS (approve/reject) =================
+    private void showManageRequests(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        // --- ROLE CHECK (comment out to disable) ---
+        // User user = (User) request.getSession().getAttribute("user");
+        // if (user == null || (!user.getRole().equals("admin") && !user.getRole().equals("staff"))) {
+        //     response.sendRedirect(request.getContextPath() + "/auth?action=login");
+        //     return;
+        // }
+
+        String statusFilter = request.getParameter("status");
+        List<ServiceUsage> requestList = serviceDAO.getAllRequestsWithDetails(statusFilter);
+
+        // Count by status
+        long pendingCount  = requestList.stream().filter(u -> "pending".equals(u.getStatus())).count();
+        long approvedCount = requestList.stream().filter(u -> "approved".equals(u.getStatus())).count();
+        long rejectedCount = requestList.stream().filter(u -> "rejected".equals(u.getStatus())).count();
+
+        request.setAttribute("requestList",   requestList);
+        request.setAttribute("statusFilter",  statusFilter != null ? statusFilter : "");
+        request.setAttribute("pendingCount",  pendingCount);
+        request.setAttribute("approvedCount", approvedCount);
+        request.setAttribute("rejectedCount", rejectedCount);
+        request.getRequestDispatcher("/views/admin/services/manageRequests.jsp")
+                .forward(request, response);
+    }
+
+    // ================= ADMIN: APPROVE REQUEST =================
+    private void approveRequest(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+
+        // --- ROLE CHECK (comment out to disable) ---
+        // User user = (User) request.getSession().getAttribute("user");
+        // if (user == null || (!user.getRole().equals("admin") && !user.getRole().equals("staff"))) {
+        //     response.sendRedirect(request.getContextPath() + "/auth?action=login");
+        //     return;
+        // }
+
+        int usageId = Integer.parseInt(request.getParameter("id"));
+        serviceDAO.approveRequest(usageId);
+        String ref = request.getParameter("from");
+        if ("pending".equals(ref)) {
+            response.sendRedirect(request.getContextPath()
+                    + "/services?action=manageRequests&status=pending");
+        } else {
+            response.sendRedirect(request.getContextPath()
+                    + "/services?action=manageRequests");
+        }
+    }
+
+    // ================= ADMIN: REJECT REQUEST =================
+    private void rejectRequest(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+
+        // --- ROLE CHECK (comment out to disable) ---
+        // User user = (User) request.getSession().getAttribute("user");
+        // if (user == null || (!user.getRole().equals("admin") && !user.getRole().equals("staff"))) {
+        //     response.sendRedirect(request.getContextPath() + "/auth?action=login");
+        //     return;
+        // }
+
+        int usageId = Integer.parseInt(request.getParameter("id"));
+        serviceDAO.rejectRequest(usageId);
+        String ref = request.getParameter("from");
+        if ("pending".equals(ref)) {
+            response.sendRedirect(request.getContextPath()
+                    + "/services?action=manageRequests&status=pending");
+        } else {
+            response.sendRedirect(request.getContextPath()
+                    + "/services?action=manageRequests");
+        }
     }
 
     // ================= ADMIN: CREATE FORM =================
@@ -173,7 +337,7 @@ public class ServiceServlet extends HttpServlet {
         int id = Integer.parseInt(request.getParameter("id"));
         Service service = serviceDAO.getServiceById(id);
         List<PriceCategory> categories = serviceDAO.getServicePriceCategories();
-        request.setAttribute("service", service);
+        request.setAttribute("service",         service);
         request.setAttribute("priceCategories", categories);
         request.getRequestDispatcher("/views/admin/services/editService.jsp")
                 .forward(request, response);
@@ -230,11 +394,11 @@ public class ServiceServlet extends HttpServlet {
         response.sendRedirect(request.getContextPath() + "/services?action=adminList");
     }
 
-    // ================= ADMIN: DETAIL (with usage list) =================
+    // ================= ADMIN: DETAIL =================
     private void showDetail(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        int     id      = Integer.parseInt(request.getParameter("id"));
+        int id = Integer.parseInt(request.getParameter("id"));
         Service service = serviceDAO.getServiceById(id);
         request.setAttribute("service", service);
         request.getRequestDispatcher("/views/admin/services/serviceDetail.jsp")
@@ -247,8 +411,8 @@ public class ServiceServlet extends HttpServlet {
 
         int contractId = Integer.parseInt(request.getParameter("contractId"));
         List<ServiceUsage> usageList = serviceDAO.getUsageByContract(contractId);
-        request.setAttribute("usageList", usageList);
-        request.setAttribute("contractId", contractId);
+        request.setAttribute("usageList",   usageList);
+        request.setAttribute("contractId",  contractId);
         request.getRequestDispatcher("/views/admin/services/requestList.jsp")
                 .forward(request, response);
     }
@@ -257,10 +421,10 @@ public class ServiceServlet extends HttpServlet {
     private void addUsage(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
 
-        int contractId    = Integer.parseInt(request.getParameter("contractId"));
-        int serviceId     = Integer.parseInt(request.getParameter("serviceId"));
-        BigDecimal qty    = new BigDecimal(request.getParameter("quantity"));
-        LocalDate useDate = LocalDate.parse(request.getParameter("usageDate"));
+        int        contractId = Integer.parseInt(request.getParameter("contractId"));
+        int        serviceId  = Integer.parseInt(request.getParameter("serviceId"));
+        BigDecimal qty        = new BigDecimal(request.getParameter("quantity"));
+        LocalDate  useDate    = LocalDate.parse(request.getParameter("usageDate"));
 
         ServiceUsage u = new ServiceUsage();
         u.setContractId(contractId);

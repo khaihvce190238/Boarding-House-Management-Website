@@ -109,7 +109,7 @@
                                     </c:otherwise>
                                 </c:choose>
 
-                                <div class="p-4">
+                                    <div class="p-4">
                                     <div class="svc-name mb-1">${svc.serviceName}</div>
                                     <div class="svc-desc mb-3">
                                         <c:choose>
@@ -121,6 +121,12 @@
                                         <span class="badge bg-light text-dark border small">
                                             <i class="bi bi-tag me-1"></i>Cat. ${svc.categoryId}
                                         </span>
+                                        <c:if test="${not empty sessionScope.user}">
+                                            <a href="${pageContext.request.contextPath}/services?action=requestForm&serviceId=${svc.serviceId}"
+                                               class="btn btn-sm btn-primary">
+                                                <i class="bi bi-send me-1"></i>Request
+                                            </a>
+                                        </c:if>
                                     </div>
                                 </div>
                             </div>

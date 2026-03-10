@@ -20,9 +20,13 @@ public class ServiceUsage {
     private LocalDate usageDate;
     private boolean billed;
 
+    // DB field
+    private String status;          // pending | approved | rejected
+
     // Display fields (populated by join queries)
     private String serviceName;
     private String roomNumber;
+    private String requesterName;
     private BigDecimal unitPrice;
     private BigDecimal totalCost;
 
@@ -86,6 +90,14 @@ public class ServiceUsage {
         this.billed = billed;
     }
 
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
     public String getServiceName() {
         return serviceName;
     }
@@ -100,6 +112,14 @@ public class ServiceUsage {
 
     public void setRoomNumber(String roomNumber) {
         this.roomNumber = roomNumber;
+    }
+
+    public String getRequesterName() {
+        return requesterName;
+    }
+
+    public void setRequesterName(String requesterName) {
+        this.requesterName = requesterName;
     }
 
     public BigDecimal getUnitPrice() {

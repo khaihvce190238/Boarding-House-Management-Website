@@ -72,8 +72,18 @@
                     <li class="breadcrumb-item active text-white">My Service History</li>
                 </ol>
             </nav>
-            <h1><i class="bi bi-clock-history me-2"></i>My Service History</h1>
-            <p class="mb-0">Track all services used in your tenancy period</p>
+            <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+                <div>
+                    <h1><i class="bi bi-clock-history me-2"></i>My Service History</h1>
+                    <p class="mb-0">Track all services used in your tenancy period</p>
+                </div>
+                <a href="${pageContext.request.contextPath}/services?action=requestForm"
+                   style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:50px;padding:10px 22px;text-decoration:none;font-weight:600;font-size:.9rem;display:inline-flex;align-items:center;gap:.5rem;transition:background .2s"
+                   onmouseover="this.style.background='rgba(255,255,255,.3)'"
+                   onmouseout="this.style.background='rgba(255,255,255,.2)'">
+                    <i class="bi bi-send"></i>Request New Service
+                </a>
+            </div>
         </div>
     </div>
 
@@ -190,14 +200,24 @@
                                         </td>
                                         <td class="text-center">
                                             <c:choose>
+                                                <c:when test="${h.status == 'pending'}">
+                                                    <span class="status-badge-pending">
+                                                        <i class="bi bi-hourglass-split me-1"></i>Chờ duyệt
+                                                    </span>
+                                                </c:when>
+                                                <c:when test="${h.status == 'rejected'}">
+                                                    <span style="background:#fee2e2;color:#991b1b;border-radius:50px;padding:3px 12px;font-size:.75rem;font-weight:600">
+                                                        <i class="bi bi-x-circle me-1"></i>Từ chối
+                                                    </span>
+                                                </c:when>
                                                 <c:when test="${h.billed}">
                                                     <span class="status-badge-billed">
-                                                        <i class="bi bi-check-circle me-1"></i>Billed
+                                                        <i class="bi bi-receipt me-1"></i>Đã tính tiền
                                                     </span>
                                                 </c:when>
                                                 <c:otherwise>
-                                                    <span class="status-badge-pending">
-                                                        <i class="bi bi-clock me-1"></i>Pending
+                                                    <span class="status-badge-billed" style="background:#dbeafe;color:#1e40af">
+                                                        <i class="bi bi-check-circle me-1"></i>Đã duyệt
                                                     </span>
                                                 </c:otherwise>
                                             </c:choose>

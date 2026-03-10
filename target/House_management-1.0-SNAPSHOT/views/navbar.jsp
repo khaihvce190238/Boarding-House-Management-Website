@@ -94,8 +94,14 @@
                             </li>
                             <li>
                                 <a class="dropdown-item"
+                                   href="${pageContext.request.contextPath}/services?action=manageRequests">
+                                    <i class="bi bi-clipboard2-check me-2"></i>Manage Requests
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item"
                                    href="${pageContext.request.contextPath}/services?action=requestList">
-                                    <i class="bi bi-list-check me-2"></i>Service Request List
+                                    <i class="bi bi-list-check me-2"></i>All Usage Records
                                 </a>
                             </li>
                         </c:if>
