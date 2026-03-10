@@ -6,6 +6,7 @@ Controllers\FacilityServlet.class
 Models\Room.class
 DALs\ServiceDAO.class
 Controllers\UserServlet.class
+Models\RoomCategory.class
 Models\Service.class
 Utils\DBContext.class
 DALs\FacilityDAO.class
@@ -30,6 +31,7 @@ Models\Facility.class
 Models\ServiceUsage.class
 Models\User.class
 Controllers\NotificationServlet.class
+DALs\RoomCategoryDAO.class
 Controllers\PriceServlet.class
 DALs\PriceDAO.class
 Models\Meter.class

@@ -1,15 +1,8 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package DALs;
 
-/**
- *
- * @author huuda
- */
 import Models.Room;
 import Utils.DBContext;
+import java.math.BigDecimal;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -18,143 +11,80 @@ import java.util.Map;
 
 public class RoomDAO extends DBContext {
 
-    // 🔹 Lấy tất cả phòng chưa bị xóa
+    private static final String SELECT_WITH_CAT =
+        "SELECT r.room_id, r.room_number, r.status, r.image, r.is_deleted, " +
+        "       r.category_id, rc.category_name, rc.base_price " +
+        "FROM room r " +
+        "LEFT JOIN room_category rc ON r.category_id = rc.category_id AND rc.is_deleted = 0 ";
+
+    // ── Get all rooms ────────────────────────────────────────────────────────
     public List<Room> getAllRooms() {
         List<Room> list = new ArrayList<>();
-        String sql = "SELECT * FROM room WHERE is_deleted = 0";
-
-        try (PreparedStatement st = connection.prepareStatement(sql); ResultSet rs = st.executeQuery()) {
-
-            while (rs.next()) {
-                list.add(mapRoom(rs));
-            }
-
+        String sql = SELECT_WITH_CAT + "WHERE r.is_deleted = 0 ORDER BY r.room_number";
+        try (PreparedStatement st = connection.prepareStatement(sql);
+             ResultSet rs = st.executeQuery()) {
+            while (rs.next()) list.add(mapRoom(rs));
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return list;
     }
 
-    // 🔹 Lấy phòng theo ID
+    // ── Get room by ID ───────────────────────────────────────────────────────
     public Room getRoomById(int id) {
-        String sql = "SELECT * FROM room WHERE room_id = ? AND is_deleted = 0";
-
+        String sql = SELECT_WITH_CAT + "WHERE r.room_id = ? AND r.is_deleted = 0";
         try (PreparedStatement st = connection.prepareStatement(sql)) {
             st.setInt(1, id);
             ResultSet rs = st.executeQuery();
-
-            if (rs.next()) {
-                return mapRoom(rs);
-            }
-
+            if (rs.next()) return mapRoom(rs);
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return null;
     }
 
-    // 🔹 Thêm phòng
-    public void insertRoom(Room r) {
-        String sql = "INSERT INTO room(room_number, status, image, is_deleted)"
-                + "VALUES (?, ?, ?, 0)";
-
-        try (PreparedStatement st = connection.prepareStatement(sql)) {
-            st.setString(1, r.getRoomNumber());
-            st.setString(2, r.getStatus()); // available / occupied / maintenance
-            st.setString(3, r.getImage());
-            st.executeUpdate();
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    // 🔹 Cập nhật phòng
-    public void updateRoom(Room r) {
-
-        String sql = "UPDATE room "
-                + "SET room_number = ?, status = ?, image = ? "
-                + "WHERE room_id = ?";
-        try (PreparedStatement st = connection.prepareStatement(sql)) {
-            st.setString(1, r.getRoomNumber());
-            st.setString(2, r.getStatus());
-            st.setString(3, r.getImage());
-            st.setInt(4, r.getRoomId());
-            st.executeUpdate();
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    // 🔹 Soft delete
-    public void deleteRoom(int id) {
-        String sql = "UPDATE room SET is_deleted = 1 WHERE room_id = ?";
-
-        try (PreparedStatement st = connection.prepareStatement(sql)) {
-            st.setInt(1, id);
-            st.executeUpdate();
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-    //hard Delete
-    
-    // 🔹 Cập nhật trạng thái phòng
-    public void updateStatus(int roomId, String status) {
-        String sql = "UPDATE room SET status = ? WHERE room_id = ?";
-
+    // ── Filter by status ─────────────────────────────────────────────────────
+    public List<Room> getByStatus(String status) {
+        List<Room> list = new ArrayList<>();
+        String sql = SELECT_WITH_CAT + "WHERE r.status = ? AND r.is_deleted = 0 ORDER BY r.room_number";
         try (PreparedStatement st = connection.prepareStatement(sql)) {
             st.setString(1, status);
-            st.setInt(2, roomId);
-            st.executeUpdate();
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    //search by key
-    public List<Room> searchByNumber(String keyword) {
-        List<Room> list = new ArrayList<>();
-        String sql = "SELECT * FROM room WHERE room_number LIKE ? AND is_deleted = 0";
-
-        try (PreparedStatement st = connection.prepareStatement(sql)) {
-            st.setString(1, "%" + keyword + "%");
-
             ResultSet rs = st.executeQuery();
-
-            while (rs.next()) {
-                list.add(mapRoom(rs));
-            }
-
+            while (rs.next()) list.add(mapRoom(rs));
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
         return list;
     }
 
-    //get room by Status
-    public List<Room> getByStatus(String status) {
+    // ── Filter by category ───────────────────────────────────────────────────
+    public List<Room> getRoomsByCategoryId(int categoryId) {
         List<Room> list = new ArrayList<>();
-
-        String sql = "SELECT * FROM room WHERE status = ? AND is_deleted = 0";
-
+        String sql = SELECT_WITH_CAT +
+                     "WHERE r.category_id = ? AND r.is_deleted = 0 ORDER BY r.room_number";
         try (PreparedStatement st = connection.prepareStatement(sql)) {
-            st.setString(1, status);
-
+            st.setInt(1, categoryId);
             ResultSet rs = st.executeQuery();
-
-            while (rs.next()) {
-                list.add(mapRoom(rs));
-            }
-
+            while (rs.next()) list.add(mapRoom(rs));
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        return list;
+    }
 
+    // ── Filter by category AND status ────────────────────────────────────────
+    public List<Room> getRoomsByCategoryAndStatus(int categoryId, String status) {
+        List<Room> list = new ArrayList<>();
+        String sql = SELECT_WITH_CAT +
+                     "WHERE r.category_id = ? AND r.status = ? AND r.is_deleted = 0 ORDER BY r.room_number";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, categoryId);
+            st.setString(2, status);
+            ResultSet rs = st.executeQuery();
+            while (rs.next()) list.add(mapRoom(rs));
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         return list;
     }
 
@@ -169,27 +99,104 @@ public class RoomDAO extends DBContext {
         counts.put("available",   0);
         counts.put("occupied",    0);
         counts.put("maintenance", 0);
-
         String sql = "SELECT status, COUNT(*) AS cnt FROM room WHERE is_deleted = 0 GROUP BY status";
         try (PreparedStatement st = connection.prepareStatement(sql);
              ResultSet rs = st.executeQuery()) {
-            while (rs.next()) {
-                counts.put(rs.getString("status"), rs.getInt("cnt"));
-            }
+            while (rs.next()) counts.put(rs.getString("status"), rs.getInt("cnt"));
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return counts;
     }
 
-    // 🔹 Map ResultSet → Room
+    // ── Search by room number ─────────────────────────────────────────────────
+    public List<Room> searchByNumber(String keyword) {
+        List<Room> list = new ArrayList<>();
+        String sql = SELECT_WITH_CAT +
+                     "WHERE r.room_number LIKE ? AND r.is_deleted = 0 ORDER BY r.room_number";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setString(1, "%" + keyword + "%");
+            ResultSet rs = st.executeQuery();
+            while (rs.next()) list.add(mapRoom(rs));
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    // ── Insert ───────────────────────────────────────────────────────────────
+    public void insertRoom(Room r) {
+        String sql = "INSERT INTO room(room_number, status, image, category_id, is_deleted) " +
+                     "VALUES (?, ?, ?, ?, 0)";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setString(1, r.getRoomNumber());
+            st.setString(2, r.getStatus());
+            st.setString(3, r.getImage());
+            if (r.getCategoryId() > 0)
+                st.setInt(4, r.getCategoryId());
+            else
+                st.setNull(4, Types.INTEGER);
+            st.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // ── Update ───────────────────────────────────────────────────────────────
+    public void updateRoom(Room r) {
+        String sql = "UPDATE room SET room_number = ?, status = ?, image = ?, category_id = ? " +
+                     "WHERE room_id = ?";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setString(1, r.getRoomNumber());
+            st.setString(2, r.getStatus());
+            st.setString(3, r.getImage());
+            if (r.getCategoryId() > 0)
+                st.setInt(4, r.getCategoryId());
+            else
+                st.setNull(4, Types.INTEGER);
+            st.setInt(5, r.getRoomId());
+            st.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // ── Soft delete ──────────────────────────────────────────────────────────
+    public void deleteRoom(int id) {
+        String sql = "UPDATE room SET is_deleted = 1 WHERE room_id = ?";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, id);
+            st.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // ── Update status only ───────────────────────────────────────────────────
+    public void updateStatus(int roomId, String status) {
+        String sql = "UPDATE room SET status = ? WHERE room_id = ?";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setString(1, status);
+            st.setInt(2, roomId);
+            st.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // ── Map ResultSet → Room (with category fields) ──────────────────────────
     private Room mapRoom(ResultSet rs) throws SQLException {
-        return new Room(
+        Room room = new Room(
                 rs.getInt("room_id"),
                 rs.getString("room_number"),
                 rs.getString("status"),
                 rs.getString("image"),
                 rs.getBoolean("is_deleted")
         );
+        room.setCategoryId(rs.getInt("category_id"));
+        room.setCategoryName(rs.getString("category_name"));
+        BigDecimal bp = rs.getBigDecimal("base_price");
+        room.setBasePrice(bp != null ? bp : BigDecimal.ZERO);
+        return room;
     }
 }

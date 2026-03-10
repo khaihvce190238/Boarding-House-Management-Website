@@ -1,5 +1,6 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -150,8 +151,9 @@
 
         <div class="container py-4" style="max-width: 860px;">
 
-            <%-- Breadcrumb + back --%>
-            <a href="${pageContext.request.contextPath}/room?action=publicList" class="btn-back">
+            <a href="${pageContext.request.contextPath}/room?action=publicList
+                <c:if test="${not empty room and room.categoryId > 0}">?categoryId=${room.categoryId}</c:if>"
+               class="btn-back">
                 <i class="bi bi-arrow-left"></i> Back to Room List
             </a>
 
@@ -185,6 +187,25 @@
                                 </span>
                             </div>
                         </div>
+                        <c:if test="${not empty room.categoryName}">
+                        <div class="info-row">
+                            <div class="info-key">Type</div>
+                            <div class="info-val">
+                                <span style="background:#ede9fe;color:#6d28d9;border-radius:8px;padding:2px 10px;font-size:.8rem;font-weight:600;">
+                                    <i class="bi bi-tag me-1"></i>${room.categoryName}
+                                </span>
+                            </div>
+                        </div>
+                        </c:if>
+                        <c:if test="${not empty room.basePrice and room.basePrice > 0}">
+                        <div class="info-row">
+                            <div class="info-key">Base Price</div>
+                            <div class="info-val fw-bold" style="color:#4f46e5">
+                                <fmt:formatNumber value="${room.basePrice}" groupingUsed="true" maxFractionDigits="0"/>₫
+                                <span class="text-muted fw-normal" style="font-size:.8rem"> / month</span>
+                            </div>
+                        </div>
+                        </c:if>
                         <div class="info-row">
                             <div class="info-key">Room ID</div>
                             <div class="info-val text-muted">#${room.roomId}</div>
