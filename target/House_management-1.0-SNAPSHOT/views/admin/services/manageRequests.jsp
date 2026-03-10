@@ -14,13 +14,13 @@
             <p class="text-muted mb-0 small">Review and approve/reject service requests from tenants</p>
         </div>
         <div class="d-flex gap-2">
+            <a href="${pageContext.request.contextPath}/services?action=requestList"
+               class="btn btn-outline-info btn-sm">
+                <i class="bi bi-list-check me-1"></i>All Usage Records
+            </a>
             <a href="${pageContext.request.contextPath}/services?action=adminList"
                class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-gear me-1"></i>Manage Services
-            </a>
-            <a href="${pageContext.request.contextPath}/services?action=requestList"
-               class="btn btn-outline-info btn-sm">
-                <i class="bi bi-list-check me-1"></i>All Usage
             </a>
         </div>
     </div>
@@ -199,40 +199,32 @@
 
                                         <%-- Actions --%>
                                         <td class="text-center pe-4">
-                                            <c:choose>
-                                                <c:when test="${req.status == 'pending'}">
-                                                    <div class="d-flex justify-content-center gap-1">
-                                                        <a href="${pageContext.request.contextPath}/services?action=approve&id=${req.usageId}&from=${statusFilter}"
-                                                           class="btn btn-sm btn-success"
-                                                           onclick="return confirm('Approve this service request?')"
-                                                           title="Approve">
-                                                            <i class="bi bi-check-lg me-1"></i>Approve
-                                                        </a>
-                                                        <a href="${pageContext.request.contextPath}/services?action=reject&id=${req.usageId}&from=${statusFilter}"
-                                                           class="btn btn-sm btn-outline-danger"
-                                                           onclick="return confirm('Reject this service request?')"
-                                                           title="Reject">
-                                                            <i class="bi bi-x-lg"></i>
-                                                        </a>
-                                                    </div>
-                                                </c:when>
-                                                <c:when test="${req.status == 'approved'}">
+                                            <div class="d-flex justify-content-center gap-1">
+                                                <%-- Quick approve/reject shortcuts --%>
+                                                <c:if test="${req.status == 'pending'}">
+                                                    <a href="${pageContext.request.contextPath}/services?action=approve&id=${req.usageId}&from=${statusFilter}"
+                                                       class="btn btn-sm btn-success"
+                                                       onclick="return confirm('Approve this request?')"
+                                                       title="Approve">
+                                                        <i class="bi bi-check-lg"></i>
+                                                    </a>
                                                     <a href="${pageContext.request.contextPath}/services?action=reject&id=${req.usageId}&from=${statusFilter}"
                                                        class="btn btn-sm btn-outline-danger"
-                                                       onclick="return confirm('Revoke approval for this request?')"
-                                                       title="Revoke">
-                                                        <i class="bi bi-arrow-counterclockwise me-1"></i>Revoke
+                                                       onclick="return confirm('Reject this request?')"
+                                                       title="Reject">
+                                                        <i class="bi bi-x-lg"></i>
                                                     </a>
-                                                </c:when>
-                                                <c:when test="${req.status == 'rejected'}">
-                                                    <a href="${pageContext.request.contextPath}/services?action=approve&id=${req.usageId}&from=${statusFilter}"
-                                                       class="btn btn-sm btn-outline-success"
-                                                       onclick="return confirm('Re-approve this request?')"
-                                                       title="Re-approve">
-                                                        <i class="bi bi-arrow-counterclockwise me-1"></i>Re-approve
-                                                    </a>
-                                                </c:when>
-                                            </c:choose>
+                                                </c:if>
+                                                <%-- Edit/Update Status button (always visible) --%>
+                                                <button type="button"
+                                                        class="btn btn-sm btn-outline-primary"
+                                                        title="Update Status"
+                                                        onclick="openStatusModal(${req.usageId}, '${req.status}', '${statusFilter}')"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#updateStatusModal">
+                                                    <i class="bi bi-pencil-square"></i>
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 </c:forEach>
@@ -258,5 +250,53 @@
             </c:choose>
         </div>
     </div>
+
+    <%-- ===== UPDATE STATUS MODAL ===== --%>
+    <div class="modal fade" id="updateStatusModal" tabindex="-1" aria-labelledby="updateStatusModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <form method="post" action="${pageContext.request.contextPath}/services">
+                    <input type="hidden" name="action"       value="updateStatus">
+                    <input type="hidden" name="id"           id="modalUsageId">
+                    <input type="hidden" name="statusFilter" id="modalStatusFilter">
+
+                    <div class="modal-header border-bottom-0 pb-0">
+                        <h5 class="modal-title fw-bold" id="updateStatusModalLabel">
+                            <i class="bi bi-pencil-square me-2 text-primary"></i>Update Request Status
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body pt-3">
+                        <p class="text-muted small mb-3">
+                            Select the new status for request <strong>#<span id="modalUsageIdDisplay"></span></strong>.
+                        </p>
+                        <label class="form-label fw-semibold">New Status</label>
+                        <select name="status" id="modalStatus" class="form-select">
+                            <option value="pending">⏳ Pending</option>
+                            <option value="approved">✅ Approved</option>
+                            <option value="rejected">❌ Rejected</option>
+                        </select>
+                    </div>
+
+                    <div class="modal-footer border-top-0 pt-0">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="bi bi-save me-1"></i>Save Status
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openStatusModal(usageId, currentStatus, statusFilter) {
+            document.getElementById('modalUsageId').value        = usageId;
+            document.getElementById('modalUsageIdDisplay').textContent = usageId;
+            document.getElementById('modalStatus').value         = currentStatus;
+            document.getElementById('modalStatusFilter').value   = statusFilter || '';
+        }
+    </script>
 
 </t:layout>

@@ -493,6 +493,40 @@ public class ServiceDAO extends DBContext {
     }
 
     // =============================
+    // ADMIN: UPDATE REQUEST STATUS (any value)
+    // =============================
+    public void updateRequestStatus(int usageId, String status) {
+
+        String sql = "UPDATE service_usage SET status = ? WHERE usage_id = ?";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setString(1, status);
+            ps.setInt(2, usageId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // =============================
+    // ADMIN: COUNT PENDING REQUESTS
+    // =============================
+    public int countPendingRequests() {
+
+        String sql = "SELECT COUNT(*) FROM service_usage WHERE status = 'pending'";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return rs.getInt(1);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    // =============================
     // ADMIN: REJECT REQUEST
     // =============================
     public void rejectRequest(int usageId) {

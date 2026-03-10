@@ -122,6 +122,9 @@ public class ServiceServlet extends HttpServlet {
             case "submitRequest":
                 submitRequest(request, response);
                 break;
+            case "updateStatus":
+                updateRequestStatus(request, response);
+                break;
         }
     }
 
@@ -272,6 +275,30 @@ public class ServiceServlet extends HttpServlet {
         request.setAttribute("rejectedCount", rejectedCount);
         request.getRequestDispatcher("/views/admin/services/manageRequests.jsp")
                 .forward(request, response);
+    }
+
+    // ================= ADMIN: UPDATE REQUEST STATUS (POST) =================
+    private void updateRequestStatus(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+
+        // --- ROLE CHECK (comment out to disable) ---
+        // User user = (User) request.getSession().getAttribute("user");
+        // if (user == null || (!user.getRole().equals("admin") && !user.getRole().equals("staff"))) {
+        //     response.sendRedirect(request.getContextPath() + "/auth?action=login");
+        //     return;
+        // }
+
+        int    usageId    = Integer.parseInt(request.getParameter("id"));
+        String newStatus  = request.getParameter("status");
+        String filter     = request.getParameter("statusFilter");
+
+        serviceDAO.updateRequestStatus(usageId, newStatus);
+
+        String redirect = request.getContextPath() + "/services?action=manageRequests";
+        if (filter != null && !filter.isEmpty()) {
+            redirect += "&status=" + filter;
+        }
+        response.sendRedirect(redirect);
     }
 
     // ================= ADMIN: APPROVE REQUEST =================

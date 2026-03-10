@@ -1,5 +1,6 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@page session="true"%>
+<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <!DOCTYPE html>
 <html>
     <head>
@@ -85,7 +86,7 @@
 
                 <div class="col-md-4 mb-3">
                     <div class="card feature-card shadow text-center p-4"
-                         onclick="location.href = '${pageContext.request.contextPath}/views/customer/rooms.jsp'">
+                         onclick="location.href = '${pageContext.request.contextPath}/room?action=categories'">
                         <h5>🏠 Room</h5>
                         <p>View your room details</p>
                     </div>
@@ -122,6 +123,24 @@
                         <p>Manage account</p>
                     </div>
                 </div>
+
+                <c:if test="${sessionScope.user.role == 'admin' or sessionScope.user.role == 'staff'}">
+                    <div class="col-md-4 mb-3">
+                        <div class="card feature-card shadow text-center p-4"
+                             onclick="location.href = '${pageContext.request.contextPath}/services?action=adminList'">
+                            <h5>⚙️ Manage Services</h5>
+                            <p>Add / edit / delete services</p>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <div class="card feature-card shadow text-center p-4"
+                             onclick="location.href = '${pageContext.request.contextPath}/services?action=manageRequests'">
+                            <h5>📋 Service Requests</h5>
+                            <p>View &amp; update request status</p>
+                        </div>
+                    </div>
+                </c:if>
 
             </div>
 
