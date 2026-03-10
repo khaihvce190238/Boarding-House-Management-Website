@@ -20,6 +20,12 @@ public class ServiceUsage {
     private LocalDate usageDate;
     private boolean billed;
 
+    // Display fields (populated by join queries)
+    private String serviceName;
+    private String roomNumber;
+    private BigDecimal unitPrice;
+    private BigDecimal totalCost;
+
     public ServiceUsage() {
     }
 
@@ -79,5 +85,36 @@ public class ServiceUsage {
     public void setBilled(boolean billed) {
         this.billed = billed;
     }
-    
+
+    public String getServiceName() {
+        return serviceName;
+    }
+
+    public void setServiceName(String serviceName) {
+        this.serviceName = serviceName;
+    }
+
+    public String getRoomNumber() {
+        return roomNumber;
+    }
+
+    public void setRoomNumber(String roomNumber) {
+        this.roomNumber = roomNumber;
+    }
+
+    public BigDecimal getUnitPrice() {
+        return unitPrice;
+    }
+
+    public void setUnitPrice(BigDecimal unitPrice) {
+        this.unitPrice = unitPrice;
+    }
+
+    public BigDecimal getTotalCost() {
+        return totalCost;
+    }
+
+    public void setTotalCost(BigDecimal totalCost) {
+        this.totalCost = totalCost;
+    }
 }

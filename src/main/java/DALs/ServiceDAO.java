@@ -1,10 +1,10 @@
 package DALs;
 
 import Utils.DBContext;
+import Models.PriceCategory;
 import Models.Service;
 import Models.ServiceUsage;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -275,6 +275,145 @@ public class ServiceDAO extends DBContext {
         }
 
         return total;
+    }
+
+    // =============================
+    // GET ALL USAGE WITH DETAILS (admin: request list)
+    // =============================
+    public List<ServiceUsage> getAllUsageWithDetails() {
+
+        List<ServiceUsage> list = new ArrayList<>();
+
+        String sql = "SELECT su.usage_id, su.contract_id, su.service_id, su.quantity, "
+                + "su.usage_date, su.billed, "
+                + "s.service_name, r.room_number, "
+                + "ph.price_amount AS unit_price "
+                + "FROM service_usage su "
+                + "JOIN service s ON su.service_id = s.service_id "
+                + "JOIN contract c ON su.contract_id = c.contract_id "
+                + "JOIN room r ON c.room_id = r.room_id "
+                + "LEFT JOIN price_history ph ON s.category_id = ph.category_id "
+                + "  AND ph.effective_from = ( "
+                + "    SELECT TOP 1 effective_from FROM price_history "
+                + "    WHERE category_id = s.category_id "
+                + "    AND effective_from <= su.usage_date "
+                + "    ORDER BY effective_from DESC "
+                + "  ) "
+                + "ORDER BY su.usage_date DESC";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                ServiceUsage u = new ServiceUsage();
+                u.setUsageId(rs.getInt("usage_id"));
+                u.setContractId(rs.getInt("contract_id"));
+                u.setServiceId(rs.getInt("service_id"));
+                u.setQuantity(rs.getBigDecimal("quantity"));
+                u.setUsageDate(rs.getDate("usage_date").toLocalDate());
+                u.setBilled(rs.getBoolean("billed"));
+                u.setServiceName(rs.getString("service_name"));
+                u.setRoomNumber(rs.getString("room_number"));
+                BigDecimal unitPrice = rs.getBigDecimal("unit_price");
+                if (unitPrice == null) unitPrice = BigDecimal.ZERO;
+                u.setUnitPrice(unitPrice);
+                u.setTotalCost(unitPrice.multiply(u.getQuantity()));
+                list.add(u);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+    // =============================
+    // GET USAGE BY USER ID (customer: service history)
+    // =============================
+    public List<ServiceUsage> getUsageByUserId(int userId) {
+
+        List<ServiceUsage> list = new ArrayList<>();
+
+        String sql = "SELECT su.usage_id, su.contract_id, su.service_id, su.quantity, "
+                + "su.usage_date, su.billed, "
+                + "s.service_name, r.room_number, "
+                + "ph.price_amount AS unit_price "
+                + "FROM service_usage su "
+                + "JOIN service s ON su.service_id = s.service_id "
+                + "JOIN contract c ON su.contract_id = c.contract_id "
+                + "JOIN room r ON c.room_id = r.room_id "
+                + "JOIN contract_user cu ON c.contract_id = cu.contract_id "
+                + "LEFT JOIN price_history ph ON s.category_id = ph.category_id "
+                + "  AND ph.effective_from = ( "
+                + "    SELECT TOP 1 effective_from FROM price_history "
+                + "    WHERE category_id = s.category_id "
+                + "    AND effective_from <= su.usage_date "
+                + "    ORDER BY effective_from DESC "
+                + "  ) "
+                + "WHERE cu.user_id = ? "
+                + "ORDER BY su.usage_date DESC";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setInt(1, userId);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                ServiceUsage u = new ServiceUsage();
+                u.setUsageId(rs.getInt("usage_id"));
+                u.setContractId(rs.getInt("contract_id"));
+                u.setServiceId(rs.getInt("service_id"));
+                u.setQuantity(rs.getBigDecimal("quantity"));
+                u.setUsageDate(rs.getDate("usage_date").toLocalDate());
+                u.setBilled(rs.getBoolean("billed"));
+                u.setServiceName(rs.getString("service_name"));
+                u.setRoomNumber(rs.getString("room_number"));
+                BigDecimal unitPrice = rs.getBigDecimal("unit_price");
+                if (unitPrice == null) unitPrice = BigDecimal.ZERO;
+                u.setUnitPrice(unitPrice);
+                u.setTotalCost(unitPrice.multiply(u.getQuantity()));
+                list.add(u);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+    // =============================
+    // GET SERVICE CATEGORIES (for forms)
+    // =============================
+    public List<PriceCategory> getServicePriceCategories() {
+
+        List<PriceCategory> list = new ArrayList<>();
+
+        String sql = "SELECT category_id, category_code, category_type, unit "
+                + "FROM price_category "
+                + "WHERE is_deleted = 0 AND category_type = 'service' "
+                + "ORDER BY category_code";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                PriceCategory c = new PriceCategory();
+                c.setCategoryId(rs.getInt("category_id"));
+                c.setCategoryCode(rs.getString("category_code"));
+                c.setCategoryType(rs.getString("category_type"));
+                c.setUnit(rs.getString("unit"));
+                list.add(c);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return list;
     }
 
     // =============================

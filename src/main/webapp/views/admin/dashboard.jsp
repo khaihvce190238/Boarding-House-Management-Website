@@ -101,7 +101,7 @@
 
                 <div class="col-md-4 mb-3">
                     <div class="card feature-card shadow text-center p-4"
-                         onclick="location.href = '${pageContext.request.contextPath}/views/customer/services.jsp'">
+                         onclick="location.href = '${pageContext.request.contextPath}/services'">
                         <h5>🔧 Services</h5>
                         <p>Request maintenance</p>
                     </div>

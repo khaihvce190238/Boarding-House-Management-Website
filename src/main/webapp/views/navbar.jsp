@@ -63,11 +63,43 @@
                     </ul>
                 </li>
 
-                <li class="nav-item">
-                    <a class="nav-link"
-                       href="${pageContext.request.contextPath}/services">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle"
+                       href="${pageContext.request.contextPath}/services"
+                       data-bs-toggle="dropdown">
                         Services
                     </a>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a class="dropdown-item"
+                               href="${pageContext.request.contextPath}/services">
+                                <i class="bi bi-grid-3x3-gap me-2"></i>All Services
+                            </a>
+                        </li>
+                        <c:if test="${not empty sessionScope.user}">
+                            <li>
+                                <a class="dropdown-item"
+                                   href="${pageContext.request.contextPath}/services?action=myHistory">
+                                    <i class="bi bi-clock-history me-2"></i>My Service History
+                                </a>
+                            </li>
+                        </c:if>
+                        <c:if test="${sessionScope.user.role == 'admin' or sessionScope.user.role == 'staff'}">
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item"
+                                   href="${pageContext.request.contextPath}/services?action=adminList">
+                                    <i class="bi bi-gear me-2"></i>Manage Services
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item"
+                                   href="${pageContext.request.contextPath}/services?action=requestList">
+                                    <i class="bi bi-list-check me-2"></i>Service Request List
+                                </a>
+                            </li>
+                        </c:if>
+                    </ul>
                 </li>
 
                 <li class="nav-item">
