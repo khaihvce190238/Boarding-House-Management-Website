@@ -85,7 +85,7 @@
 
                 <div class="col-md-4 mb-3">
                     <div class="card feature-card shadow text-center p-4"
-                         onclick="location.href = '${pageContext.request.contextPath}/views/customer/rooms.jsp'">
+                         onclick="location.href = '${pageContext.request.contextPath}/room?action=categories'">
                         <h5>🏠 Room</h5>
                         <p>View your room details</p>
                     </div>

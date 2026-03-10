@@ -32,7 +32,7 @@ public class RoomServlet extends HttpServlet {
             throws ServletException, IOException {
 
         String action = request.getParameter("action");
-        if (action == null) action = "list";
+        if (action == null) action = "categories";
 
         switch (action) {
 
@@ -50,6 +50,10 @@ public class RoomServlet extends HttpServlet {
                 break;
 
             // ── Admin ────────────────────────────────────────────────────────
+            case "list":
+                listRooms(request, response);
+                break;
+
             case "create":
                 showCreateForm(request, response);
                 break;
@@ -200,7 +204,7 @@ public class RoomServlet extends HttpServlet {
             room.setCategoryId(Integer.parseInt(categoryParam));
         }
         roomDAO.insertRoom(room);
-        response.sendRedirect("room");
+        response.sendRedirect("room?action=list");
     }
 
     // ================= EDIT (admin) =================
@@ -234,7 +238,7 @@ public class RoomServlet extends HttpServlet {
             room.setCategoryId(Integer.parseInt(categoryParam));
         }
         roomDAO.updateRoom(room);
-        response.sendRedirect("room");
+        response.sendRedirect("room?action=list");
     }
 
     // ================= DELETE (admin) =================
@@ -243,7 +247,7 @@ public class RoomServlet extends HttpServlet {
 
         int id = Integer.parseInt(request.getParameter("id"));
         roomDAO.deleteRoom(id);
-        response.sendRedirect("room");
+        response.sendRedirect("room?action=list");
     }
 
     // ================= DETAIL (admin) =================

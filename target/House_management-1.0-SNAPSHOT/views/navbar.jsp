@@ -38,7 +38,7 @@
                 </li>
 
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                    <a class="nav-link dropdown-toggle" href="${pageContext.request.contextPath}/room?action=categories" data-bs-toggle="dropdown">
                         Rooms
                     </a>
                     <ul class="dropdown-menu">
