@@ -34,3 +34,4 @@ Controllers\PriceServlet.class
 DALs\PriceDAO.class
 Models\Meter.class
 Models\PriceCategory.class
+Models\RoomAmenity.class

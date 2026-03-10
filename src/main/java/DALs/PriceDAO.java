@@ -1,6 +1,7 @@
 package DALs;
 
 import Utils.DBContext;
+import Models.PriceCategory;
 import Models.PriceHistory;
 
 import java.math.BigDecimal;
@@ -150,6 +151,32 @@ public class PriceDAO extends DBContext {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    // ===============================
+    // GET ALL PRICE CATEGORIES
+    // ===============================
+    public List<PriceCategory> getAllPriceCategories() {
+        List<PriceCategory> list = new ArrayList<>();
+        String sql = "SELECT category_id, category_code, category_type, unit, is_deleted "
+                + "FROM price_category WHERE is_deleted = 0 "
+                + "ORDER BY category_type, category_code";
+        try {
+            PreparedStatement st = connection.prepareStatement(sql);
+            ResultSet rs = st.executeQuery();
+            while (rs.next()) {
+                PriceCategory c = new PriceCategory();
+                c.setCategoryId(rs.getInt("category_id"));
+                c.setCategoryCode(rs.getString("category_code"));
+                c.setCategoryType(rs.getString("category_type"));
+                c.setUnit(rs.getString("unit"));
+                c.setIsDeleted(rs.getBoolean("is_deleted"));
+                list.add(c);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
     }
 
     // ===============================

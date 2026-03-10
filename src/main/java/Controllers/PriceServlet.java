@@ -1,6 +1,7 @@
 package Controllers;
 
 import DALs.PriceDAO;
+import Models.PriceCategory;
 import Models.PriceHistory;
 
 import jakarta.servlet.ServletException;
@@ -26,11 +27,19 @@ public class PriceServlet extends HttpServlet {
         String action = request.getParameter("action");
 
         if (action == null) {
-            listPrices(request, response);
+            listCategories(request, response);
             return;
         }
 
         switch (action) {
+
+            case "categories":
+                listCategories(request, response);
+                break;
+
+            case "prices":
+                listPrices(request, response);
+                break;
 
             case "create":
                 showCreateForm(request, response);
@@ -45,7 +54,7 @@ public class PriceServlet extends HttpServlet {
                 break;
 
             default:
-                listPrices(request, response);
+                listCategories(request, response);
         }
     }
 
@@ -62,7 +71,19 @@ public class PriceServlet extends HttpServlet {
         }
     }
 
-    // ================= LIST =================
+    // ================= LIST CATEGORIES =================
+    private void listCategories(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        List<PriceCategory> categories = priceDAO.getAllPriceCategories();
+
+        request.setAttribute("categories", categories);
+
+        request.getRequestDispatcher("/views/admin/prices/priceCategories.jsp")
+                .forward(request, response);
+    }
+
+    // ================= LIST PRICES =================
     private void listPrices(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
@@ -70,7 +91,7 @@ public class PriceServlet extends HttpServlet {
 
         request.setAttribute("priceList", list);
 
-        request.getRequestDispatcher("/admin/prices/priceCategories.jsp")
+        request.getRequestDispatcher("/views/admin/prices/priceCategories.jsp")
                 .forward(request, response);
     }
 
@@ -78,7 +99,7 @@ public class PriceServlet extends HttpServlet {
     private void showCreateForm(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        request.getRequestDispatcher("/admin/prices/createPriceCategory.jsp")
+        request.getRequestDispatcher("/views/admin/prices/createPriceCategory.jsp")
                 .forward(request, response);
     }
 
@@ -111,7 +132,7 @@ public class PriceServlet extends HttpServlet {
 
         request.setAttribute("price", price);
 
-        request.getRequestDispatcher("/admin/prices/editPriceCategory.jsp")
+        request.getRequestDispatcher("/views/admin/prices/editPriceCategory.jsp")
                 .forward(request, response);
     }
 

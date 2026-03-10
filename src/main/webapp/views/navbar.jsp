@@ -1,3 +1,4 @@
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="t" tagdir="/WEB-INF/tags" %>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow">
@@ -36,11 +37,30 @@
                     </a>
                 </li>
 
-                <li class="nav-item">
-                    <a class="nav-link"
-                       href="${pageContext.request.contextPath}/room?action=list">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
                         Rooms
                     </a>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a class="dropdown-item"
+                               href="${pageContext.request.contextPath}/room?action=categories">
+                                <i class="bi bi-grid-3x3-gap me-2"></i>Room Categories
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item"
+                               href="${pageContext.request.contextPath}/room?action=publicList">
+                                <i class="bi bi-list-ul me-2"></i>All Rooms
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item"
+                               href="${pageContext.request.contextPath}/room?action=publicList&status=available">
+                                <i class="bi bi-check-circle me-2 text-success"></i>Available Rooms
+                            </a>
+                        </li>
+                    </ul>
                 </li>
 
                 <li class="nav-item">
@@ -86,16 +106,16 @@
                                 <li>
                                     <a class="dropdown-item"
                                        href="${pageContext.request.contextPath}/customer?action=profile">
-                                        <i class="bi bi-person me-2"></i>Hồ sơ cá nhân
+                                        <i class="bi bi-person me-2"></i>My Profile
                                     </a>
                                 </li>
 
-                                <%-- Manage Users: chỉ hiện cho admin/staff --%>
+                                <%-- Manage Users: visible to admin/staff only --%>
                                 <c:if test="${sessionScope.user.role == 'admin' or sessionScope.user.role == 'staff'}">
                                 <li>
                                     <a class="dropdown-item"
                                        href="${pageContext.request.contextPath}/user?action=list">
-                                        <i class="bi bi-people me-2"></i>Quản lý người dùng
+                                        <i class="bi bi-people me-2"></i>Manage Users
                                     </a>
                                 </li>
                                 </c:if>

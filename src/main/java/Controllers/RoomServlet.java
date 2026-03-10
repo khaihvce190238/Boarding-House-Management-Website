@@ -1,21 +1,26 @@
 package Controllers;
 
+import DALs.FacilityDAO;
 import DALs.RoomDAO;
 import Models.Room;
+import Models.RoomAmenity;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.*;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 public class RoomServlet extends HttpServlet {
 
-    private RoomDAO roomDAO;
+    private RoomDAO     roomDAO;
+    private FacilityDAO facilityDAO;
 
     @Override
     public void init() {
-        roomDAO = new RoomDAO();
+        roomDAO     = new RoomDAO();
+        facilityDAO = new FacilityDAO();
     }
 
     @Override
@@ -30,6 +35,20 @@ public class RoomServlet extends HttpServlet {
 
         switch (action) {
 
+            // ── Customer-facing ──────────────────────────────────────────────
+            case "categories":
+                showCategories(request, response);
+                break;
+
+            case "publicList":
+                showPublicList(request, response);
+                break;
+
+            case "publicDetail":
+                showPublicDetail(request, response);
+                break;
+
+            // ── Admin ────────────────────────────────────────────────────────
             case "create":
                 showCreateForm(request, response);
                 break;
@@ -68,6 +87,53 @@ public class RoomServlet extends HttpServlet {
                 updateRoom(request, response);
                 break;
         }
+    }
+
+    // ================= CUSTOMER: CATEGORIES =================
+    private void showCategories(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        Map<String, Integer> counts = roomDAO.getCountByStatus();
+        request.setAttribute("counts", counts);
+        request.getRequestDispatcher("/views/customer/roomCategories.jsp")
+                .forward(request, response);
+    }
+
+    // ================= CUSTOMER: PUBLIC LIST (filter by status) =================
+    private void showPublicList(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        String status = request.getParameter("status");
+        List<Room> rooms;
+
+        if (status != null && !status.trim().isEmpty()) {
+            rooms = roomDAO.getByStatus(status.trim());
+            request.setAttribute("activeStatus", status.trim());
+        } else {
+            rooms = roomDAO.getAllRooms();
+            request.setAttribute("activeStatus", "all");
+        }
+
+        Map<String, Integer> counts = roomDAO.getCountByStatus();
+        request.setAttribute("rooms",  rooms);
+        request.setAttribute("counts", counts);
+        request.getRequestDispatcher("/views/customer/rooms.jsp")
+                .forward(request, response);
+    }
+
+    // ================= CUSTOMER: PUBLIC DETAIL + AMENITIES =================
+    private void showPublicDetail(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        int id = Integer.parseInt(request.getParameter("id"));
+
+        Room room = roomDAO.getRoomById(id);
+        List<RoomAmenity> amenities = facilityDAO.getAmenitiesByRoomId(id);
+
+        request.setAttribute("room",      room);
+        request.setAttribute("amenities", amenities);
+        request.getRequestDispatcher("/views/customer/roomDetail.jsp")
+                .forward(request, response);
     }
 
     // ================= LIST =================

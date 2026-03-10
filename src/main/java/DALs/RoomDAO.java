@@ -12,7 +12,9 @@ import Models.Room;
 import Utils.DBContext;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class RoomDAO extends DBContext {
 
@@ -154,6 +156,30 @@ public class RoomDAO extends DBContext {
         }
 
         return list;
+    }
+
+    // ── Available rooms only ─────────────────────────────────────────────────
+    public List<Room> getAvailableRooms() {
+        return getByStatus("available");
+    }
+
+    // ── Count rooms grouped by status ────────────────────────────────────────
+    public Map<String, Integer> getCountByStatus() {
+        Map<String, Integer> counts = new LinkedHashMap<>();
+        counts.put("available",   0);
+        counts.put("occupied",    0);
+        counts.put("maintenance", 0);
+
+        String sql = "SELECT status, COUNT(*) AS cnt FROM room WHERE is_deleted = 0 GROUP BY status";
+        try (PreparedStatement st = connection.prepareStatement(sql);
+             ResultSet rs = st.executeQuery()) {
+            while (rs.next()) {
+                counts.put(rs.getString("status"), rs.getInt("cnt"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return counts;
     }
 
     // 🔹 Map ResultSet → Room
