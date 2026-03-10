@@ -69,11 +69,23 @@
         .room-img-wrap {
             position: relative;
             height: 180px; overflow: hidden;
+            background: linear-gradient(135deg, #e0e7ff 0%, #ede9fe 100%);
         }
         .room-img-wrap img {
             width: 100%; height: 100%; object-fit: cover;
             transition: transform .3s;
         }
+        .room-img-wrap img[data-no-img] {
+            display: none;
+        }
+        .room-img-wrap .room-placeholder {
+            width: 100%; height: 100%;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: .5rem; color: #818cf8;
+        }
+        .room-img-wrap .room-placeholder i { font-size: 3rem; }
+        .room-img-wrap .room-placeholder span { font-size: .85rem; font-weight: 600; }
         .room-card:hover .room-img-wrap img { transform: scale(1.05); }
 
         .status-badge {
@@ -186,7 +198,11 @@
                                 <div class="room-img-wrap">
                                     <img src="${pageContext.request.contextPath}/assets/images/room/${not empty room.image ? room.image : 'default.jpg'}"
                                          alt="Room ${room.roomNumber}"
-                                         onerror="this.src='${pageContext.request.contextPath}/assets/images/room/default.jpg'">
+                                         onerror="this.onerror=null;this.setAttribute('data-no-img','1');this.parentElement.querySelector('.room-placeholder').style.display='flex';">
+                                    <div class="room-placeholder" style="display:none;position:absolute;inset:0;">
+                                        <i class="bi bi-door-closed"></i>
+                                        <span>Room ${room.roomNumber}</span>
+                                    </div>
                                     <span class="status-badge status-${room.status}">
                                         <c:choose>
                                             <c:when test="${room.status == 'available'}">Available</c:when>

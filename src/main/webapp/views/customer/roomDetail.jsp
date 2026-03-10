@@ -132,7 +132,7 @@
             <img class="room-hero"
                  src="${pageContext.request.contextPath}/assets/images/room/${not empty room.image ? room.image : 'default.jpg'}"
                  alt="Room ${room.roomNumber}"
-                 onerror="this.src='${pageContext.request.contextPath}/assets/images/room/default.jpg'">
+                 onerror="this.onerror=null;this.style.display='none';this.parentElement.style.background='linear-gradient(135deg,#4f46e5,#7c3aed)'">
             <div class="hero-overlay"></div>
             <div class="hero-info">
                 <div class="mb-2">
