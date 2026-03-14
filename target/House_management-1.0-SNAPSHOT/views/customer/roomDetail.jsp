@@ -219,12 +219,46 @@
                         </div>
                         <c:choose>
                             <c:when test="${room.status == 'available'}">
-                                <p class="text-muted small mb-3">This room is available. Contact us to arrange a viewing or sign a contract.</p>
-                                <a href="${pageContext.request.contextPath}/contract?action=create&roomId=${room.roomId}"
-                                   class="btn w-100 fw-semibold mb-2"
-                                   style="background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border:none;border-radius:10px;height:42px">
-                                    <i class="bi bi-file-earmark-text me-1"></i> Sign Contract
-                                </a>
+                                <p class="text-muted small mb-3">This room is available. Sign a contract to move in right away.</p>
+                                <c:choose>
+                                    <%-- Admin/Staff: go to admin contract creation form --%>
+                                    <c:when test="${sessionScope.user.role == 'admin' or sessionScope.user.role == 'staff'}">
+                                        <a href="${pageContext.request.contextPath}/contract?action=create"
+                                           class="btn w-100 fw-semibold mb-2"
+                                           style="background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border:none;border-radius:10px;height:42px">
+                                            <i class="bi bi-file-earmark-plus me-1"></i> Create Contract
+                                        </a>
+                                    </c:when>
+                                    <%-- Logged-in customer --%>
+                                    <c:when test="${not empty sessionScope.user}">
+                                        <c:choose>
+                                            <c:when test="${alreadyHasContract == true}">
+                                                <%-- Already has an active contract → block signing --%>
+                                                <div class="alert alert-warning py-2 small rounded-3 mb-2">
+                                                    <i class="bi bi-exclamation-triangle me-1"></i>
+                                                    You already have an active contract.
+                                                    <a href="${pageContext.request.contextPath}/contract?action=mycontract" class="alert-link">View it here.</a>
+                                                </div>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <%-- No active contract → allow signing, pre-fill room --%>
+                                                <a href="${pageContext.request.contextPath}/contract?action=signContract&roomId=${room.roomId}"
+                                                   class="btn w-100 fw-semibold mb-2"
+                                                   style="background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border:none;border-radius:10px;height:42px">
+                                                    <i class="bi bi-pen me-1"></i> Sign Contract for This Room
+                                                </a>
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </c:when>
+                                    <%-- Not logged in: prompt to log in --%>
+                                    <c:otherwise>
+                                        <a href="${pageContext.request.contextPath}/auth?action=login"
+                                           class="btn w-100 fw-semibold mb-2"
+                                           style="background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border:none;border-radius:10px;height:42px">
+                                            <i class="bi bi-box-arrow-in-right me-1"></i> Log In to Sign Contract
+                                        </a>
+                                    </c:otherwise>
+                                </c:choose>
                             </c:when>
                             <c:when test="${room.status == 'occupied'}">
                                 <p class="text-muted small mb-2">This room is currently occupied.</p>

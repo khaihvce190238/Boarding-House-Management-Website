@@ -110,7 +110,7 @@
 
                 <div class="col-md-4 mb-3">
                     <div class="card feature-card shadow text-center p-4"
-                         onclick="location.href = '${pageContext.request.contextPath}/views/customer/notifications.jsp'">
+                         onclick="location.href = '${pageContext.request.contextPath}/notification'">
                         <h5>🔔 Notifications</h5>
                         <p>Latest announcements</p>
                     </div>
@@ -138,6 +138,46 @@
                              onclick="location.href = '${pageContext.request.contextPath}/services?action=manageRequests'">
                             <h5>📋 Service Requests</h5>
                             <p>View &amp; update request status</p>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <div class="card feature-card shadow text-center p-4"
+                             onclick="location.href = '${pageContext.request.contextPath}/utility'">
+                            <h5>⚡ Utilities</h5>
+                            <p>Electricity, Water, Gas &amp; price history</p>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <div class="card feature-card shadow text-center p-4"
+                             onclick="location.href = '${pageContext.request.contextPath}/amenity'">
+                            <h5>🌟 Amenities</h5>
+                            <p>Balcony, Kitchen, Hot Water, etc.</p>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <div class="card feature-card shadow text-center p-4"
+                             onclick="location.href = '${pageContext.request.contextPath}/contract?action=list'">
+                            <h5>📄 Rental Contracts</h5>
+                            <p>Manage contracts, co-tenants &amp; termination</p>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <div class="card feature-card shadow text-center p-4"
+                             onclick="location.href = '${pageContext.request.contextPath}/manage-customer'">
+                            <h5>👥 Manage Customers</h5>
+                            <p>View, add, edit &amp; manage tenants</p>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <div class="card feature-card shadow text-center p-4"
+                             onclick="location.href = '${pageContext.request.contextPath}/activity-log'">
+                            <h5>📋 Activity Logs</h5>
+                            <p>Track tenant activity timeline</p>
                         </div>
                     </div>
                 </c:if>

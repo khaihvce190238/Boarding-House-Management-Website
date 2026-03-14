@@ -92,7 +92,7 @@ public class UserDAO extends DBContext {
         return false;
     }
 
-    // ================= GET ALL =================
+    // ================= GET ALL (admin: all roles, active only) =================
     public List<User> getAllUsers() {
         List<User> list = new ArrayList<>();
         String sql = "SELECT * FROM [user] WHERE is_deleted = 0";
@@ -107,6 +107,87 @@ public class UserDAO extends DBContext {
             e.printStackTrace();
         }
         return list;
+    }
+
+    // ================= GET ALL CUSTOMERS (active + hidden) =================
+    public List<User> getAllCustomers(String search, String statusFilter) {
+        List<User> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+            "SELECT * FROM [user] WHERE role = 'customer'");
+
+        if ("active".equals(statusFilter)) {
+            sql.append(" AND is_deleted = 0");
+        } else if ("hidden".equals(statusFilter)) {
+            sql.append(" AND is_deleted = 1");
+        }
+
+        if (search != null && !search.trim().isEmpty()) {
+            sql.append(" AND (userName LIKE ? OR full_name LIKE ? OR email LIKE ? OR phone LIKE ?)");
+        }
+
+        sql.append(" ORDER BY is_deleted ASC, full_name ASC");
+
+        try {
+            PreparedStatement st = connection.prepareStatement(sql.toString());
+            if (search != null && !search.trim().isEmpty()) {
+                String kw = "%" + search.trim() + "%";
+                st.setString(1, kw);
+                st.setString(2, kw);
+                st.setString(3, kw);
+                st.setString(4, kw);
+            }
+            ResultSet rs = st.executeQuery();
+            while (rs.next()) {
+                list.add(mapUser(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    // ================= INSERT CUSTOMER =================
+    public boolean insertCustomer(User u) {
+        String sql = "INSERT INTO [user] "
+                + "(userName, password, full_name, email, phone, role, image, is_deleted) "
+                + "VALUES (?, ?, ?, ?, ?, 'customer', ?, 0)";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setString(1, u.getUsername());
+            st.setString(2, md5(u.getPassword()));
+            st.setString(3, u.getFullName());
+            st.setString(4, u.getEmail());
+            st.setString(5, u.getPhone());
+            st.setString(6, u.getImage() != null ? u.getImage() : "default.png");
+            return st.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    // ================= GET BY ID (include hidden) =================
+    public User getUserByIdAny(int id) {
+        String sql = "SELECT * FROM [user] WHERE user_id = ?";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, id);
+            ResultSet rs = st.executeQuery();
+            if (rs.next()) return mapUser(rs);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    // ================= RESTORE USER =================
+    public boolean restoreUser(int id) {
+        String sql = "UPDATE [user] SET is_deleted = 0 WHERE user_id = ?";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, id);
+            return st.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     // ================= GET BY ID =================

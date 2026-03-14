@@ -108,12 +108,98 @@
                     </ul>
                 </li>
 
+                <c:if test="${sessionScope.user.role == 'admin' or sessionScope.user.role == 'staff'}">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                        <i class="bi bi-tools me-1"></i>Management
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <h6 class="dropdown-header">
+                                <i class="bi bi-lightning-charge-fill text-warning me-1"></i>Utilities
+                            </h6>
+                        </li>
+                        <li>
+                            <a class="dropdown-item"
+                               href="${pageContext.request.contextPath}/utility">
+                                <i class="bi bi-list-ul me-2"></i>Manage Utilities
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <h6 class="dropdown-header">
+                                <i class="bi bi-stars text-info me-1"></i>Amenities
+                            </h6>
+                        </li>
+                        <li>
+                            <a class="dropdown-item"
+                               href="${pageContext.request.contextPath}/amenity">
+                                <i class="bi bi-list-ul me-2"></i>Manage Amenities
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item"
+                               href="${pageContext.request.contextPath}/facility">
+                                <i class="bi bi-wrench me-2"></i>Manage Facilities
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <h6 class="dropdown-header">
+                                <i class="bi bi-file-earmark-text-fill text-primary me-1"></i>Contracts
+                            </h6>
+                        </li>
+                        <li>
+                            <a class="dropdown-item"
+                               href="${pageContext.request.contextPath}/contract?action=list">
+                                <i class="bi bi-list-ul me-2"></i>Manage Contracts
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item"
+                               href="${pageContext.request.contextPath}/contract?action=create">
+                                <i class="bi bi-file-earmark-plus me-2"></i>New Contract
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <h6 class="dropdown-header">
+                                <i class="bi bi-people-fill text-success me-1"></i>Customers
+                            </h6>
+                        </li>
+                        <li>
+                            <a class="dropdown-item"
+                               href="${pageContext.request.contextPath}/manage-customer">
+                                <i class="bi bi-person-lines-fill me-2"></i>Manage Customers
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item"
+                               href="${pageContext.request.contextPath}/activity-log">
+                                <i class="bi bi-activity me-2"></i>Activity Logs
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                </c:if>
+
                 <li class="nav-item">
                     <a class="nav-link"
                        href="${pageContext.request.contextPath}/contact">
                         Contact
                     </a>
                 </li>
+
+                <c:if test="${not empty sessionScope.user}">
+                <li class="nav-item">
+                    <a class="nav-link d-flex align-items-center gap-1"
+                       href="${pageContext.request.contextPath}/notification?action=publicList">
+                        <i class="bi bi-bell-fill"></i>
+                        Notifications
+                    </a>
+                </li>
+                </c:if>
 
             </ul>
 
@@ -168,9 +254,17 @@
                                 <li>
                                     <a class="dropdown-item"
                                        href="${pageContext.request.contextPath}/contract?action=mycontract">
-                                        My Contract
+                                        <i class="bi bi-file-earmark-text me-2"></i>My Contracts
                                     </a>
                                 </li>
+                                <c:if test="${sessionScope.user.role == 'customer'}">
+                                <li>
+                                    <a class="dropdown-item"
+                                       href="${pageContext.request.contextPath}/contract?action=signContract">
+                                        <i class="bi bi-pen me-2"></i>Sign a Contract
+                                    </a>
+                                </li>
+                                </c:if>
 
                                 <li>
                                     <a class="dropdown-item"
