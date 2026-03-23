@@ -85,7 +85,7 @@
 
                 <div class="col-md-4 mb-3">
                     <div class="card feature-card shadow text-center p-4"
-                         onclick="location.href = '${pageContext.request.contextPath}/views/customer/rooms.jsp'">
+                         onclick="location.href = '${pageContext.request.contextPath}/views/admin/rooms.jsp'">
                         <h5>🏠 Room</h5>
                         <p>View your room details</p>
                     </div>
@@ -93,7 +93,7 @@
 
                 <div class="col-md-4 mb-3">
                     <div class="card feature-card shadow text-center p-4"
-                         onclick="location.href = '${pageContext.request.contextPath}/views/customer/bills.jsp'">
+                         onclick="location.href = '${pageContext.request.contextPath}/views/admin/bills/bills.jsp'">
                         <h5>💰 Bills</h5>
                         <p>View payment history</p>
                     </div>
@@ -101,7 +101,7 @@
 
                 <div class="col-md-4 mb-3">
                     <div class="card feature-card shadow text-center p-4"
-                         onclick="location.href = '${pageContext.request.contextPath}/views/customer/services.jsp'">
+                         onclick="location.href = '${pageContext.request.contextPath}/views/admin/services.jsp'">
                         <h5>🔧 Services</h5>
                         <p>Request maintenance</p>
                     </div>
@@ -109,7 +109,7 @@
 
                 <div class="col-md-4 mb-3">
                     <div class="card feature-card shadow text-center p-4"
-                         onclick="location.href = '${pageContext.request.contextPath}/views/customer/notifications.jsp'">
+                         onclick="location.href = '${pageContext.request.contextPath}/views/admin/notifications.jsp'">
                         <h5>🔔 Notifications</h5>
                         <p>Latest announcements</p>
                     </div>
@@ -117,7 +117,7 @@
 
                 <div class="col-md-4 mb-3">
                     <div class="card feature-card shadow text-center p-4"
-                         onclick="location.href = '${pageContext.request.contextPath}/views/customer/profile.jsp'">
+                         onclick="location.href = '${pageContext.request.contextPath}/views/admin/profile.jsp'">
                         <h5>👤 Profile</h5>
                         <p>Manage account</p>
                     </div>
