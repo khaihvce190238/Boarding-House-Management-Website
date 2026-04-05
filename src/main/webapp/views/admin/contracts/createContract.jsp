@@ -1,5 +1,7 @@
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <!DOCTYPE html>
 <html>
 <head>
@@ -18,6 +20,9 @@
         .room-card { border-radius:10px; cursor:pointer; transition:.2s; border:2px solid #dee2e6; }
         .room-card:hover,.room-card.selected { border-color:#0f3460; background:#f0f4ff; }
         .room-card.selected .room-check { display:inline-block !important; }
+        /* Facility row */
+        .facility-row { background:#f8f9fa; border-radius:8px; padding:10px 12px; margin-bottom:8px; }
+        .facility-row .qty-input { width:80px; }
     </style>
 </head>
 <body>
@@ -44,6 +49,14 @@
     <form action="${pageContext.request.contextPath}/contract" method="post">
         <input type="hidden" name="action" value="insert">
 
+        <%-- Error banner (from forward-back on failure) --%>
+        <c:if test="${not empty contractError}">
+            <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+                <i class="bi bi-exclamation-circle me-2"></i>${contractError}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        </c:if>
+
         <%-- Select Room --%>
         <div class="card form-card shadow-sm mb-3">
             <div class="card-body p-4">
@@ -56,12 +69,13 @@
                         <div class="row g-2" id="roomGrid">
                             <c:forEach var="r" items="${availableRooms}">
                                 <div class="col-6 col-md-4">
-                                    <div class="room-card p-3" onclick="selectRoom(${r.roomId}, '${r.roomNumber}', ${r.basePrice})">
+                                    <div class="room-card p-3" data-room-id="${r.roomId}"
+                                         onclick="selectRoom(${r.roomId}, '${r.roomNumber}', ${r.basePrice})">
                                         <div class="d-flex justify-content-between align-items-start">
                                             <div>
                                                 <div class="fw-bold">Room ${r.roomNumber}</div>
                                                 <div class="text-muted small">${r.categoryName}</div>
-                                                <div class="text-success small fw-semibold mt-1">${r.basePrice}đ/month</div>
+                                                <div class="text-success small fw-semibold mt-1"><fmt:formatNumber value="${r.basePrice}" groupingUsed="true" maxFractionDigits="0"/>&#8363;/month</div>
                                             </div>
                                             <i class="bi bi-check-circle-fill text-primary room-check" style="display:none"></i>
                                         </div>
@@ -76,6 +90,30 @@
             </div>
         </div>
 
+        <%-- Facilities for selected room --%>
+        <div class="card form-card shadow-sm mb-3" id="facilityCard" style="display:none">
+            <div class="card-body p-4">
+                <div class="section-title"><i class="bi bi-box-seam me-1"></i>Room Facilities
+                    <span class="text-muted fw-normal text-lowercase ms-1">(saved to this room)</span>
+                </div>
+
+                <%-- All facilities as hidden data source for JS --%>
+                <div id="allFacilitiesData" style="display:none">
+                    <c:forEach var="f" items="${facilities}">
+                        <span data-id="${f.facilityId}" data-name="${f.facilityName}"></span>
+                    </c:forEach>
+                </div>
+
+                <div id="facilityList">
+                    <p class="text-muted small">Select a room first.</p>
+                </div>
+
+                <button type="button" class="btn btn-sm btn-outline-secondary mt-2" id="addFacilityBtn" style="display:none" onclick="addFacilityRow()">
+                    <i class="bi bi-plus-lg me-1"></i>Add Facility
+                </button>
+            </div>
+        </div>
+
         <%-- Primary Tenant --%>
         <div class="card form-card shadow-sm mb-3">
             <div class="card-body p-4">
@@ -83,7 +121,12 @@
                 <select name="primaryUserId" class="form-select" required>
                     <option value="">— Select tenant —</option>
                     <c:forEach var="cu" items="${customers}">
-                        <option value="${cu.userId}">${not empty cu.fullName ? cu.fullName : cu.username} (@${cu.username})</option>
+                        <c:set var="hasActive" value="${activeContractUserIds.contains(cu.userId)}"/>
+                        <option value="${cu.userId}"
+                                ${formUserId == cu.userId ? 'selected' : ''}
+                                ${hasActive ? 'disabled' : ''}>
+                            ${not empty cu.fullName ? cu.fullName : cu.username} (@${cu.username})${hasActive ? ' — has active contract' : ''}
+                        </option>
                     </c:forEach>
                 </select>
             </div>
@@ -96,18 +139,31 @@
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label fw-semibold">Start Date <span class="text-danger">*</span></label>
-                        <input type="date" name="startDate" class="form-control" required value="${today}">
+                        <input type="date" name="startDate" id="startDate" class="form-control" required
+                               value="${not empty formStartDate ? formStartDate : today}">
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold">End Date <span class="text-muted fw-normal">(optional)</span></label>
-                        <input type="date" name="endDate" class="form-control">
+                        <label class="form-label fw-semibold">Contract Duration</label>
+                        <div class="input-group">
+                            <input type="number" name="durationMonths" id="durationMonths"
+                                   class="form-control" value="${not empty formDurationMonths ? formDurationMonths : 12}" min="1" max="36" required>
+                            <span class="input-group-text">months</span>
+                        </div>
+                        <div class="form-text text-muted">Default 12 months. End date is auto-calculated.</div>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold">Deposit Amount (đ) <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold">End Date (auto-calculated)</label>
+                        <input type="text" id="endDateDisplay" class="form-control" readonly placeholder="Auto from start date + duration">
+                        <input type="hidden" name="endDate" id="endDateHidden" value="${formEndDate}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Deposit Amount (&#8363;) <span class="text-danger">*</span></label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="bi bi-cash"></i></span>
-                            <input type="number" name="deposit" id="depositInput" class="form-control" placeholder="0" min="0" required>
+                            <input type="number" name="deposit" id="depositInput" class="form-control"
+                                   placeholder="0" min="0" required value="${formDeposit}">
                         </div>
+                        <div class="form-text text-muted">Suggestion: 1–2 months' rent</div>
                     </div>
                 </div>
             </div>
@@ -122,19 +178,25 @@
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label fw-semibold small">Full Name <span class="text-danger">*</span></label>
-                        <input type="text" name="tenantName" class="form-control form-control-sm" required>
+                        <input type="text" name="tenantName" class="form-control form-control-sm" required value="${formTenantName}">
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold small">Phone</label>
-                        <input type="text" name="tenantPhone" class="form-control form-control-sm">
+                        <input type="tel" name="tenantPhone" id="phone" class="form-control form-control-sm"
+                               pattern="^(0[35789])\d{8}$"
+                               maxlength="10"
+                               title="10-digit VN phone number (starting with 03/05/07/08/09)"
+                               placeholder="e.g. 0912345678"
+                               value="${formTenantPhone}">
+                        <div class="invalid-feedback">Invalid phone number (e.g. 0912345678)</div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold small">CCCD / Citizen ID</label>
-                        <input type="text" name="tenantCccd" class="form-control form-control-sm">
+                        <input type="text" name="tenantCccd" class="form-control form-control-sm" value="${formTenantCccd}">
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold small">Date of Birth</label>
-                        <input type="date" name="tenantBirthDate" class="form-control form-control-sm">
+                        <input type="date" name="tenantBirthDate" class="form-control form-control-sm" value="${formTenantBd}">
                     </div>
                 </div>
             </div>
@@ -151,8 +213,16 @@
     </form>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 let selectedRoomId = null;
+
+// Build facility map from hidden data
+const allFacilities = [];
+document.querySelectorAll('#allFacilitiesData span[data-id]').forEach(el => {
+    allFacilities.push({ id: el.dataset.id, name: el.dataset.name });
+});
+
 function selectRoom(id, number, price) {
     selectedRoomId = id;
     document.getElementById('roomIdInput').value = id;
@@ -161,16 +231,124 @@ function selectRoom(id, number, price) {
     document.getElementById('selectedRoomLabel').className = 'mt-2 text-primary small fw-semibold';
     document.querySelectorAll('.room-card').forEach(c => c.classList.remove('selected'));
     event.currentTarget.classList.add('selected');
+
+    // Show facility section and load existing facilities for this room via AJAX
+    document.getElementById('facilityCard').style.display = '';
+    document.getElementById('addFacilityBtn').style.display = '';
+    loadRoomFacilities(id);
 }
-// Set today as default start date
+
+function loadRoomFacilities(roomId) {
+    const list = document.getElementById('facilityList');
+    list.innerHTML = '<p class="text-muted small">Loading...</p>';
+
+    fetch('${pageContext.request.contextPath}/facility?action=byRoom&roomId=' + roomId)
+        .then(r => r.json())
+        .then(data => {
+            list.innerHTML = '';
+            if (data.length === 0) {
+                list.innerHTML = '<p class="text-muted small mb-2">No facilities assigned to this room yet.</p>';
+            } else {
+                data.forEach(f => addFacilityRow(f.facilityId, f.facilityName, f.quantity));
+            }
+        })
+        .catch(() => {
+            list.innerHTML = '<p class="text-muted small mb-2">Could not load existing facilities.</p>';
+        });
+}
+
+function addFacilityRow(facilityId, facilityName, quantity) {
+    const list = document.getElementById('facilityList');
+
+    // Remove placeholder text if present
+    const placeholder = list.querySelector('p');
+    if (placeholder) placeholder.remove();
+
+    const row = document.createElement('div');
+    row.className = 'facility-row d-flex align-items-center gap-3';
+
+    // Build select options (no template literals - JSP EL conflict)
+    var options = allFacilities.map(function(f) {
+        var sel = String(f.id) === String(facilityId) ? ' selected' : '';
+        return '<option value="' + f.id + '"' + sel + '>' + f.name + '</option>';
+    }).join('');
+
+    row.innerHTML =
+        '<select name="facilityId" class="form-select form-select-sm flex-fill" required>' +
+            '<option value="">-- Select facility --</option>' +
+            options +
+        '</select>' +
+        '<input type="number" name="facilityQty" class="form-control form-control-sm qty-input"' +
+               ' placeholder="Qty" min="1" value="' + (quantity || 1) + '" required>' +
+        '<button type="button" class="btn btn-sm btn-outline-danger"' +
+                ' onclick="this.closest(\'.facility-row\').remove()">' +
+            '<i class="bi bi-trash"></i>' +
+        '</button>';
+    list.appendChild(row);
+}
+
+// Auto-compute end date from start date + duration
+function computeEndDate() {
+    var start = document.getElementById('startDate').value;
+    var months = parseInt(document.getElementById('durationMonths').value) || 12;
+    if (!start) return;
+    var d = new Date(start);
+    d.setMonth(d.getMonth() + months);
+    d.setDate(d.getDate() - 1); // end = start + N months - 1 day
+    var iso = d.toISOString().slice(0, 10);
+    document.getElementById('endDateDisplay').value = iso;
+    document.getElementById('endDateHidden').value = iso;
+}
+
+// Phone validation on submit
+document.querySelector('form').addEventListener('submit', function(e) {
+    var phoneInputs = document.querySelectorAll('input[name="tenantPhone"]');
+    phoneInputs.forEach(function(input) {
+        if (input.value && !/^(0[35789])\d{8}$/.test(input.value)) {
+            e.preventDefault();
+            input.classList.add('is-invalid');
+        }
+    });
+});
+
+// Clear invalid state on phone input
+document.querySelectorAll('input[name="tenantPhone"]').forEach(function(input) {
+    input.addEventListener('input', function() { input.classList.remove('is-invalid'); });
+});
+
+// Set today as default start date (only if not pre-filled by server)
 document.addEventListener('DOMContentLoaded', function() {
-    var today = new Date().toISOString().substring(0,10);
-    document.querySelector('[name=startDate]').value = today;
+    // Default start date
+    var startInput = document.getElementById('startDate');
+    if (!startInput.value) {
+        startInput.value = new Date().toISOString().substring(0,10);
+    }
+
+    // Attach end-date auto-compute
+    startInput.addEventListener('change', computeEndDate);
+    document.getElementById('durationMonths').addEventListener('input', computeEndDate);
+
+    // Compute on load if start date already set
+    if (startInput.value) computeEndDate();
+
+    // Restore room selection after form error (formRoomId set by server)
+    var savedRoomId = '${formRoomId}';
+    if (savedRoomId) {
+        var card = document.querySelector('.room-card[data-room-id="' + savedRoomId + '"]');
+        if (card) {
+            card.click();
+        } else {
+            // Fallback: set hidden input and show facility section manually
+            document.getElementById('roomIdInput').value = savedRoomId;
+            document.getElementById('facilityCard').style.display = '';
+            document.getElementById('addFacilityBtn').style.display = '';
+            loadRoomFacilities(savedRoomId);
+        }
+    }
 });
 </script>
 </div>
 <%@ include file="../../footer.jsp" %>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </main>
 </div>
 </div>

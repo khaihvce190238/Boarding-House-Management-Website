@@ -1,6 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="t" tagdir="/WEB-INF/tags" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 
 <t:layout>
 
@@ -50,6 +51,21 @@
                                     <small class="text-secondary">
                                         <i class="bi bi-tag me-1"></i>Category ID: ${facility.categoryId}
                                     </small>
+                                </p>
+                                <p class="card-text">
+                                    <c:choose>
+                                        <c:when test="${facility.monthlyPrice > 0}">
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">
+                                                <i class="bi bi-currency-exchange me-1"></i>
+                                                +<fmt:formatNumber value="${facility.monthlyPrice}" groupingUsed="true" maxFractionDigits="0"/>&#8363;/mo
+                                            </span>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill">
+                                                <i class="bi bi-tag me-1"></i>No price set
+                                            </span>
+                                        </c:otherwise>
+                                    </c:choose>
                                 </p>
                             </div>
 

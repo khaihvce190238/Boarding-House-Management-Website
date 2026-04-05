@@ -1,5 +1,6 @@
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <!DOCTYPE html>
 <html>
 <head>
@@ -80,8 +81,9 @@
                     <div class="info-row d-flex justify-content-between"><span class="text-muted small">Contract ID</span><span class="fw-semibold">#${contract.contractId}</span></div>
                     <div class="info-row d-flex justify-content-between"><span class="text-muted small">Room</span><span class="fw-semibold">Room ${contract.roomNumber}</span></div>
                     <div class="info-row d-flex justify-content-between"><span class="text-muted small">Category</span><span class="small">${not empty contract.categoryName ? contract.categoryName : '—'}</span></div>
-                    <div class="info-row d-flex justify-content-between"><span class="text-muted small">Base Price</span><span class="small">${not empty contract.basePrice ? contract.basePrice : '—'}đ</span></div>
-                    <div class="info-row d-flex justify-content-between"><span class="text-muted small">Deposit</span><span class="fw-semibold text-primary">${contract.deposit}đ</span></div>
+                    <div class="info-row d-flex justify-content-between"><span class="text-muted small">Base Price</span><span class="small"><c:choose><c:when test="${not empty contract.basePrice}"><fmt:formatNumber value="${contract.basePrice}" groupingUsed="true" maxFractionDigits="0"/>&#8363;</c:when><c:otherwise>—</c:otherwise></c:choose></span></div>
+                    <div class="info-row d-flex justify-content-between"><span class="text-muted small">Monthly Rent</span><span class="fw-semibold text-success"><c:choose><c:when test="${not empty contract.monthlyRent and contract.monthlyRent > 0}"><fmt:formatNumber value="${contract.monthlyRent}" groupingUsed="true" maxFractionDigits="0"/>&#8363;</c:when><c:otherwise>—</c:otherwise></c:choose></span></div>
+                    <div class="info-row d-flex justify-content-between"><span class="text-muted small">Deposit</span><span class="fw-semibold text-primary"><fmt:formatNumber value="${contract.deposit}" groupingUsed="true" maxFractionDigits="0"/>&#8363;</span></div>
                     <div class="info-row d-flex justify-content-between"><span class="text-muted small">Start Date</span><span class="small">${contract.startDate}</span></div>
                     <div class="info-row d-flex justify-content-between"><span class="text-muted small">End Date</span><span class="small">${not empty contract.endDate ? contract.endDate : '—'}</span></div>
                     <div class="info-row d-flex justify-content-between"><span class="text-muted small">Created</span><span class="small">${not empty contract.createdAt ? contract.createdAt : '—'}</span></div>
@@ -104,13 +106,13 @@
             <ul class="nav nav-pills mb-3">
                 <li class="nav-item">
                     <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-tenants">
-                        <i class="bi bi-people me-1"></i>Co-tenants
+                        <i class="bi bi-people me-1"></i>System Accounts
                         <span class="badge bg-white text-dark ms-1">${tenants.size()}</span>
                     </button>
                 </li>
                 <li class="nav-item">
                     <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-contract-tenants">
-                        <i class="bi bi-person-vcard me-1"></i>Tenant Info
+                        <i class="bi bi-person-vcard me-1"></i>Occupants
                         <span class="badge bg-white text-dark ms-1">${contractTenants.size()}</span>
                     </button>
                 </li>
@@ -118,6 +120,12 @@
                     <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-bills">
                         <i class="bi bi-receipt me-1"></i>Bills
                         <span class="badge bg-white text-dark ms-1">${bills.size()}</span>
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-resident-history">
+                        <i class="bi bi-clock-history me-1"></i>Resident History
+                        <span class="badge bg-white text-dark ms-1">${contractTenants.size()}</span>
                     </button>
                 </li>
             </ul>
@@ -128,7 +136,7 @@
                     <div class="d-flex justify-content-end mb-2">
                         <a href="${pageContext.request.contextPath}/contract?action=addTenant&id=${contract.contractId}"
                            class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-person-plus me-1"></i>Manage Co-tenants
+                            <i class="bi bi-person-plus me-1"></i>Manage Accounts
                         </a>
                     </div>
                     <c:choose>
@@ -168,7 +176,7 @@
                     <div class="d-flex justify-content-end mb-2">
                         <a href="${pageContext.request.contextPath}/contract?action=addContractTenant&id=${contract.contractId}"
                            class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-person-plus me-1"></i>Manage Tenants
+                            <i class="bi bi-person-plus me-1"></i>Manage Occupants
                         </a>
                     </div>
                     <c:choose>
@@ -201,7 +209,7 @@
                                                 <td class="text-muted small">${not empty t.birthDate ? t.birthDate : '—'}</td>
                                                 <td class="text-center">
                                                     <span class="badge ${t.primary ? 'bg-primary' : 'bg-secondary'} rounded-pill">
-                                                        ${t.roleLabel}
+                                                        ${t.primary ? 'Primary' : 'Co-tenant'}
                                                     </span>
                                                 </td>
                                                 <td class="text-center pe-3">
@@ -225,8 +233,7 @@
                 </div>
 
                 <%-- Bills tab --%>
-                <div class="tab-pane fade" id="tab-bills">
-                    <div class="card info-card shadow-sm">
+                <div class="tab-pane fade" id="tab-bills">                    <div class="card info-card shadow-sm">
                         <div class="card-body p-0">
                             <c:choose>
                                 <c:when test="${empty bills}">
@@ -244,11 +251,11 @@
                                                         <td class="ps-4 text-muted small">#${b.billId}</td>
                                                         <td>${b.period}</td>
                                                         <td class="text-muted small">${b.dueDate}</td>
-                                                        <td class="fw-semibold text-success">${b.totalAmount}đ</td>
+                                                        <td class="fw-semibold text-success"><fmt:formatNumber value="${b.totalAmount}" groupingUsed="true" maxFractionDigits="0"/>&#8363;</td>
                                                         <td class="text-center pe-4">
                                                             <c:choose>
                                                                 <c:when test="${b.status=='paid'}"><span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill"><i class="bi bi-check-circle me-1"></i>Paid</span></c:when>
-                                                                <c:when test="${b.status=='unpaid'}"><span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill"><i class="bi bi-clock me-1"></i>Unpaid</span></c:when>
+                                                                <c:when test="${b.status=='pending'}"><span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill"><i class="bi bi-clock me-1"></i>Unpaid</span></c:when>
                                                                 <c:when test="${b.status=='overdue'}"><span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill"><i class="bi bi-exclamation-circle me-1"></i>Overdue</span></c:when>
                                                                 <c:otherwise><span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill">${b.status}</span></c:otherwise>
                                                             </c:choose>
@@ -261,6 +268,57 @@
                                 </c:otherwise>
                             </c:choose>
                         </div>
+                    </div>
+                </div>
+
+                <%-- Resident history tab (contract_tenant of this contract) --%>
+                <div class="tab-pane fade" id="tab-resident-history">
+                    <c:choose>
+                        <c:when test="${empty contractTenants}">
+                            <div class="card info-card shadow-sm">
+                                <div class="text-center py-5 text-muted">
+                                    <i class="bi bi-clock-history fs-3 d-block mb-2"></i>No resident records
+                                </div>
+                            </div>
+                        </c:when>
+                        <c:otherwise>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0 bg-white rounded-3 shadow-sm overflow-hidden">
+                                    <thead>
+                                        <tr>
+                                            <th class="ps-4">Full Name</th>
+                                            <th>Phone</th>
+                                            <th>CCCD</th>
+                                            <th>DOB</th>
+                                            <th class="text-center">Role</th>
+                                            <th class="text-muted small pe-3">Added</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <c:forEach var="t" items="${contractTenants}">
+                                            <tr>
+                                                <td class="ps-4 fw-semibold">${t.fullName}</td>
+                                                <td class="text-muted small">${not empty t.phone ? t.phone : '—'}</td>
+                                                <td class="text-muted small">${not empty t.cccd ? t.cccd : '—'}</td>
+                                                <td class="text-muted small">${not empty t.birthDate ? t.birthDate : '—'}</td>
+                                                <td class="text-center">
+                                                    <span class="badge ${t.primary ? 'bg-primary' : 'bg-secondary'} rounded-pill">
+                                                        ${t.primary ? 'Primary' : 'Co-tenant'}
+                                                    </span>
+                                                </td>
+                                                <td class="text-muted small pe-3">${not empty t.createdAt ? t.createdAt : '—'}</td>
+                                            </tr>
+                                        </c:forEach>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </c:otherwise>
+                    </c:choose>
+                    <div class="mt-2">
+                        <a href="${pageContext.request.contextPath}/contract?action=addContractTenant&id=${contract.contractId}"
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-person-plus me-1"></i>Manage Occupants
+                        </a>
                     </div>
                 </div>
             </div>

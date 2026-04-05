@@ -1,9 +1,9 @@
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Quản lý người dùng - AKDD House</title>
+    <title>User Management - AKDD House</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -51,7 +51,10 @@
 <body>
     <%@ include file="../../navbar.jsp" %>
 
-    <div class="container-fluid mt-4 mb-5 px-4">
+<div class="container-fluid">
+<div class="row flex-nowrap admin-layout-row">
+<%@ include file="../sidebar.jsp" %>
+<main class="col admin-main px-4 py-4">
 
         <%-- Admin success/error messages --%>
         <c:if test="${not empty sessionScope.adminSuccess}">
@@ -75,12 +78,12 @@
         <div class="page-header d-flex justify-content-between align-items-center">
             <div>
                 <h4 class="fw-bold mb-1">
-                    <i class="bi bi-people-fill me-2"></i>Quản lý người dùng
+                    <i class="bi bi-people-fill me-2"></i>User Management
                 </h4>
-                <small class="opacity-75">Xem và chỉnh sửa hồ sơ tất cả người dùng</small>
+                <small class="opacity-75">View and edit profiles of all users</small>
             </div>
             <div class="badge bg-white text-dark fs-6 px-3 py-2">
-                Tổng: <strong>${users.size()} người</strong>
+                Total: <strong>${totalItems} users</strong>
             </div>
         </div>
 
@@ -92,35 +95,35 @@
                     <input type="hidden" name="action" value="list">
 
                     <div class="col-md-5">
-                        <label class="form-label small fw-semibold text-muted mb-1">Tìm kiếm</label>
+                        <label class="form-label small fw-semibold text-muted mb-1">Search</label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="bi bi-search"></i></span>
                             <input type="text" name="search" class="form-control"
-                                   placeholder="Tên, username, email..."
+                                   placeholder="Name, username, email..."
                                    value="${search}">
                         </div>
                     </div>
 
                     <div class="col-md-3">
-                        <label class="form-label small fw-semibold text-muted mb-1">Vai trò</label>
+                        <label class="form-label small fw-semibold text-muted mb-1">Role</label>
                         <select name="role" class="form-select">
-                            <option value="">Tất cả vai trò</option>
-                            <option value="admin"    ${roleFilter == 'admin'    ? 'selected' : ''}>Quản trị viên</option>
-                            <option value="staff"    ${roleFilter == 'staff'    ? 'selected' : ''}>Nhân viên</option>
-                            <option value="customer" ${roleFilter == 'customer' ? 'selected' : ''}>Khách thuê</option>
+                            <option value="">All roles</option>
+                            <option value="admin"    ${roleFilter == 'admin'    ? 'selected' : ''}>Administrator</option>
+                            <option value="staff"    ${roleFilter == 'staff'    ? 'selected' : ''}>Staff</option>
+                            <option value="customer" ${roleFilter == 'customer' ? 'selected' : ''}>Tenant</option>
                         </select>
                     </div>
 
                     <div class="col-md-2">
                         <button type="submit" class="btn btn-primary w-100">
-                            <i class="bi bi-funnel me-1"></i> Lọc
+                            <i class="bi bi-funnel me-1"></i> Filter
                         </button>
                     </div>
 
                     <div class="col-md-2">
                         <a href="${pageContext.request.contextPath}/user?action=list"
                            class="btn btn-outline-secondary w-100">
-                            <i class="bi bi-x-circle me-1"></i> Xóa lọc
+                            <i class="bi bi-x-circle me-1"></i> Clear Filters
                         </a>
                     </div>
                 </form>
@@ -135,11 +138,11 @@
                         <thead>
                             <tr>
                                 <th class="ps-4">#</th>
-                                <th>Người dùng</th>
+                                <th>User</th>
                                 <th>Email</th>
-                                <th>Điện thoại</th>
-                                <th>Vai trò</th>
-                                <th class="text-center pe-4">Thao tác</th>
+                                <th>Phone</th>
+                                <th>Role</th>
+                                <th class="text-center pe-4">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -148,7 +151,7 @@
                                     <tr>
                                         <td colspan="6" class="text-center py-5 text-muted">
                                             <i class="bi bi-people fs-3 d-block mb-2"></i>
-                                            Không tìm thấy người dùng nào
+                                            No users found
                                         </td>
                                     </tr>
                                 </c:when>
@@ -181,18 +184,18 @@
                                                 <span class="role-badge
                                                     ${u.role == 'admin' ? 'role-admin' :
                                                       u.role == 'staff' ? 'role-staff' : 'role-customer'}">
-                                                    ${u.role == 'admin' ? 'Quản trị viên' :
-                                                      u.role == 'staff' ? 'Nhân viên' : 'Khách thuê'}
+                                                    ${u.role == 'admin' ? 'Administrator' :
+                                                      u.role == 'staff' ? 'Staff' : 'Tenant'}
                                                 </span>
                                             </td>
                                             <td class="text-center pe-4">
                                                 <a href="${pageContext.request.contextPath}/user?action=edit&id=${u.userId}"
                                                    class="btn btn-sm btn-outline-primary me-1"
-                                                   title="Chỉnh sửa">
+                                                   title="Edit">
                                                     <i class="bi bi-pencil"></i>
                                                 </a>
                                                 <button class="btn btn-sm btn-outline-danger"
-                                                        title="Xóa"
+                                                        title="Delete"
                                                         onclick="confirmDelete(${u.userId}, '${u.username}')">
                                                     <i class="bi bi-trash"></i>
                                                 </button>
@@ -207,6 +210,45 @@
             </div>
         </div>
 
+    <%-- Pagination --%>
+    <c:if test="${totalPages > 1}">
+        <div class="d-flex justify-content-between align-items-center mt-3 px-1">
+            <div class="text-muted small">
+                Showing <strong>${(currentPage - 1) * pageSize + 1}</strong>–<strong>${(currentPage - 1) * pageSize + users.size()}</strong>
+                of <strong>${totalItems}</strong>
+            </div>
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item ${currentPage == 1 ? 'disabled' : ''}">
+                        <a class="page-link" href="${pageContext.request.contextPath}/user?action=list&page=${currentPage - 1}&search=${search}&role=${roleFilter}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    <c:forEach begin="1" end="${totalPages}" var="p">
+                        <c:choose>
+                            <c:when test="${p == currentPage}">
+                                <li class="page-item active"><span class="page-link">${p}</span></li>
+                            </c:when>
+                            <c:when test="${p == 1 || p == totalPages || (p >= currentPage - 2 && p <= currentPage + 2)}">
+                                <li class="page-item">
+                                    <a class="page-link" href="${pageContext.request.contextPath}/user?action=list&page=${p}&search=${search}&role=${roleFilter}">${p}</a>
+                                </li>
+                            </c:when>
+                            <c:when test="${(p == currentPage - 3 && currentPage > 4) || (p == currentPage + 3 && currentPage < totalPages - 3)}">
+                                <li class="page-item disabled"><span class="page-link">…</span></li>
+                            </c:when>
+                        </c:choose>
+                    </c:forEach>
+                    <li class="page-item ${currentPage == totalPages ? 'disabled' : ''}">
+                        <a class="page-link" href="${pageContext.request.contextPath}/user?action=list&page=${currentPage + 1}&search=${search}&role=${roleFilter}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </c:if>
+
     </div>
 
     <%-- Delete confirm modal --%>
@@ -214,26 +256,25 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow">
                 <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title fw-bold">Xác nhận xóa</h5>
+                    <h5 class="modal-title fw-bold">Confirm Delete</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body pt-2">
-                    <p class="text-muted">Bạn có chắc muốn xóa người dùng
+                    <p class="text-muted">Are you sure you want to delete user
                         <strong id="deleteUsername"></strong>?
-                        Hành động này không thể hoàn tác.
+                        This action cannot be undone.
                     </p>
                 </div>
                 <div class="modal-footer border-0">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
                     <a id="deleteConfirmBtn" href="#" class="btn btn-danger">
-                        <i class="bi bi-trash me-1"></i> Xóa
+                        <i class="bi bi-trash me-1"></i> Delete
                     </a>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         function confirmDelete(userId, username) {
             document.getElementById('deleteUsername').textContent = username;
@@ -242,5 +283,10 @@
             new bootstrap.Modal(document.getElementById('deleteModal')).show();
         }
     </script>
+<%@ include file="../../footer.jsp" %>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</main>
+</div>
+</div>
 </body>
 </html>

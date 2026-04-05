@@ -1,4 +1,4 @@
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <!DOCTYPE html>
 <html>
@@ -146,7 +146,7 @@
                                         </td>
                                         <td class="small">${c.startDate}</td>
                                         <td class="small text-muted">${not empty c.endDate ? c.endDate : '—'}</td>
-                                        <td class="small fw-semibold">${c.deposit}đ</td>
+                                        <td class="small fw-semibold">${c.deposit}&#8363;</td>
                                         <td class="text-center">
                                             <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill">${c.tenantCount}</span>
                                         </td>
@@ -162,7 +162,7 @@
                                                class="btn btn-sm btn-outline-primary me-1" title="Edit"><i class="bi bi-pencil"></i></a>
                                             <c:if test="${c.status == 'active'}">
                                                 <button class="btn btn-sm btn-outline-danger me-1" title="Terminate"
-                                                    onclick="confirmTerminate(${c.contractId}, ${c.roomId}, '${c.roomNumber}')">
+                                                    onclick="confirmTerminate(${c.contractId}, ${c.roomId}, '${c.roomNumber}', '${c.endDate}')">
                                                     <i class="bi bi-x-circle"></i>
                                                 </button>
                                             </c:if>
@@ -217,6 +217,15 @@
             <div class="modal-body">
                 <p class="text-muted">Are you sure you want to terminate contract <strong id="termId"></strong> for <strong id="termRoom"></strong>?
                 This will free the room and cannot be undone.</p>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Termination Reason <span class="text-danger">*</span></label>
+                    <textarea id="termReason" class="form-control" rows="3"
+                              placeholder="Enter reason for termination (e.g., tenant request, contract violation)"></textarea>
+                    <div class="form-text text-warning">
+                        <i class="bi bi-info-circle me-1"></i>
+                        <span id="depositInfo"></span>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer border-0">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -227,11 +236,31 @@
 </div>
 
 <script>
-function confirmTerminate(id, roomId, roomNum) {
+function confirmTerminate(id, roomId, roomNum, endDate) {
     document.getElementById('termId').textContent = '#' + id;
     document.getElementById('termRoom').textContent = 'Room ' + roomNum;
-    document.getElementById('termBtn').href =
-        '${pageContext.request.contextPath}/contract?action=terminate&id=' + id + '&roomId=' + roomId;
+    document.getElementById('termReason').value = '';
+
+    // Check if contract is fulfilled (endDate <= today)
+    var today = new Date();
+    var end = new Date(endDate);
+    var isFulfilled = end <= today;
+
+    if (isFulfilled) {
+        document.getElementById('depositInfo').textContent =
+            'Contract has reached end date. Full deposit will be refunded.';
+    } else {
+        document.getElementById('depositInfo').textContent =
+            'Early termination - deposit will be retained (not refunded).';
+    }
+
+    // Set up terminate button to include reason
+    var termBtn = document.getElementById('termBtn');
+    termBtn.onclick = function() {
+        var reason = encodeURIComponent(document.getElementById('termReason').value);
+        window.location.href = '${pageContext.request.contextPath}/contract?action=terminate&id=' + id + '&roomId=' + roomId + '&reason=' + reason;
+    };
+
     new bootstrap.Modal(document.getElementById('terminateModal')).show();
 }
 </script>

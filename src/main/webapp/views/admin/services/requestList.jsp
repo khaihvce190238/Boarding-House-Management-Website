@@ -151,10 +151,10 @@
                                         <td class="text-muted small">${u.usageDate}</td>
                                         <td class="text-end">${u.quantity}</td>
                                         <td class="text-end text-muted small">
-                                            <fmt:formatNumber value="${u.unitPrice}" groupingUsed="true" maxFractionDigits="0"/>₫
+                                            <fmt:formatNumber value="${u.unitPrice}" groupingUsed="true" maxFractionDigits="0"/>&#8363;
                                         </td>
                                         <td class="text-end fw-semibold">
-                                            <fmt:formatNumber value="${u.totalCost}" groupingUsed="true" maxFractionDigits="0"/>₫
+                                            <fmt:formatNumber value="${u.totalCost}" groupingUsed="true" maxFractionDigits="0"/>&#8363;
                                         </td>
                                         <td class="text-center">
                                             <c:choose>
@@ -194,6 +194,25 @@
                 </c:otherwise>
             </c:choose>
         </div>
+        <c:if test="${totalPages > 1}">
+            <div class="card-footer bg-white d-flex justify-content-end">
+                <nav>
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item ${currentPage == 1 ? 'disabled' : ''}">
+                            <a class="page-link" href="?action=requestList&page=${currentPage - 1}">Previous</a>
+                        </li>
+                        <c:forEach begin="1" end="${totalPages}" var="i">
+                            <li class="page-item ${i == currentPage ? 'active' : ''}">
+                                <a class="page-link" href="?action=requestList&page=${i}">${i}</a>
+                            </li>
+                        </c:forEach>
+                        <li class="page-item ${currentPage == totalPages ? 'disabled' : ''}">
+                            <a class="page-link" href="?action=requestList&page=${currentPage + 1}">Next</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </c:if>
     </div>
 
     <script>

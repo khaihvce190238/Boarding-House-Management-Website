@@ -1,5 +1,6 @@
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <!DOCTYPE html>
 <html>
 <head>
@@ -52,7 +53,7 @@
                         <div class="text-muted small">${contract.categoryName}</div>
                     </div>
                     <div class="ms-auto text-end">
-                        <div class="text-success fw-semibold">${contract.basePrice}đ/month</div>
+                        <div class="text-success fw-semibold"><c:choose><c:when test="${not empty contract.basePrice}"><fmt:formatNumber value="${contract.basePrice}" groupingUsed="true" maxFractionDigits="0"/>&#8363;</c:when><c:otherwise>—</c:otherwise></c:choose></div>
                         <span class="badge bg-${contract.statusColor}-subtle text-${contract.statusColor} border border-${contract.statusColor}-subtle rounded-pill mt-1">${contract.statusLabel}</span>
                     </div>
                 </div>
@@ -72,7 +73,7 @@
                         <input type="date" name="endDate" class="form-control" value="${contract.endDate}">
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold">Deposit (đ) <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold">Deposit (&#8363;) <span class="text-danger">*</span></label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="bi bi-cash"></i></span>
                             <input type="number" name="deposit" class="form-control" value="${contract.deposit}" min="0" required>

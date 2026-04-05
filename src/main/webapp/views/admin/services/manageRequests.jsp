@@ -168,7 +168,7 @@
                                         <%-- Est. Cost --%>
                                         <td class="text-end fw-semibold small">
                                             <fmt:formatNumber value="${req.totalCost}"
-                                                groupingUsed="true" maxFractionDigits="0"/>₫
+                                                groupingUsed="true" maxFractionDigits="0"/>&#8363;
                                         </td>
 
                                         <%-- Status badge --%>

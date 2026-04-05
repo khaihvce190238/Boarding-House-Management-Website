@@ -1,9 +1,9 @@
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Manage Tenants - Contract #${contract.contractId}</title>
+    <title>Manage Occupants - Contract #${contract.contractId}</title>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
@@ -48,7 +48,7 @@
             <i class="bi bi-people-fill"></i>
         </div>
         <div class="flex-grow-1">
-            <h5 class="mb-0 fw-bold">Manage Tenants &mdash; Contract #${contract.contractId}</h5>
+            <h5 class="mb-0 fw-bold">Manage Occupants &mdash; Contract #${contract.contractId}</h5>
             <small class="opacity-75">Room ${contract.roomNumber}
                 <c:if test="${not empty contract.categoryName}">&middot; ${contract.categoryName}</c:if>
             </small>
@@ -63,14 +63,14 @@
         <div class="col-lg-6">
             <div class="card form-card shadow-sm">
                 <div class="card-body p-4">
-                    <div class="section-title"><i class="bi bi-people me-1"></i>Tenant List
+                    <div class="section-title"><i class="bi bi-people me-1"></i>Occupant List
                         <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-1">${contractTenants.size()}</span>
                     </div>
 
                     <c:choose>
                         <c:when test="${empty contractTenants}">
                             <div class="text-center py-4 text-muted">
-                                <i class="bi bi-people fs-3 d-block mb-2"></i>No tenants yet
+                                <i class="bi bi-people fs-3 d-block mb-2"></i>No occupants yet
                             </div>
                         </c:when>
                         <c:otherwise>
@@ -119,7 +119,7 @@
                 <div class="card-body p-4">
                     <div class="section-title">
                         <i class="bi bi-person-plus me-1"></i>
-                        ${not empty editTenant ? 'Edit Tenant' : 'Add Tenant'}
+                        ${not empty editTenant ? 'Edit Occupant' : 'Add Occupant'}
                     </div>
 
                     <form action="${pageContext.request.contextPath}/contract" method="post">
@@ -164,7 +164,7 @@
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary-dark btn-sm flex-fill fw-semibold">
                                 <i class="bi bi-floppy me-1"></i>
-                                ${not empty editTenant ? 'Update Tenant' : 'Add Tenant'}
+                                ${not empty editTenant ? 'Update' : 'Add Occupant'}
                             </button>
                             <c:if test="${not empty editTenant}">
                                 <a href="${pageContext.request.contextPath}/contract?action=addContractTenant&id=${contract.contractId}"
