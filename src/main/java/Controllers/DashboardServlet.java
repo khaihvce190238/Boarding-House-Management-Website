@@ -16,7 +16,7 @@ import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.util.List;
 
-public class DashboardServleT extends HttpServlet {
+public class DashboardServlet extends HttpServlet {
 
     private ContractDAO     contractDAO;
     private BillDAO         billDAO;

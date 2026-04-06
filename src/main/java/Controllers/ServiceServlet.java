@@ -13,9 +13,12 @@ import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
 
 public class ServiceServlet extends HttpServlet {
+
+    private static final int PAGE_SIZE = 10;
 
     private ServiceDAO serviceDAO;
     private PriceDAO   priceDAO;
@@ -219,19 +222,24 @@ public class ServiceServlet extends HttpServlet {
     private void showAdminList(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // --- ROLE CHECK (comment out to disable) ---
-        // User user = (User) request.getSession().getAttribute("user");
-        // if (user == null || (!user.getRole().equals("admin") && !user.getRole().equals("staff"))) {
-        //     response.sendRedirect(request.getContextPath() + "/auth?action=login");
-        //     return;
-        // }
-
-        List<Service>       list       = serviceDAO.getAllServicesAdmin();
+        List<Service>       all        = serviceDAO.getAllServicesAdmin();
         List<PriceCategory> categories = priceDAO.getAllPriceCategories();
-        long hiddenCount = list.stream().filter(s -> s.isIsDeleted()).count();
-        request.setAttribute("services",       list);
+        long hiddenCount = all.stream().filter(s -> s.isIsDeleted()).count();
+
+        int totalItems = all.size();
+        int totalPages = Math.max(1, (int) Math.ceil((double) totalItems / PAGE_SIZE));
+        int page = parsePage(request.getParameter("page"), totalPages);
+        int from = (page - 1) * PAGE_SIZE;
+        int to   = Math.min(from + PAGE_SIZE, totalItems);
+        List<Service> list = (from < totalItems) ? all.subList(from, to) : Collections.emptyList();
+
+        request.setAttribute("services",        list);
         request.setAttribute("priceCategories", categories);
-        request.setAttribute("hiddenCount",    hiddenCount);
+        request.setAttribute("hiddenCount",     hiddenCount);
+        request.setAttribute("currentPage",     page);
+        request.setAttribute("totalPages",      totalPages);
+        request.setAttribute("totalItems",      totalItems);
+        request.setAttribute("pageSize",        PAGE_SIZE);
         request.getRequestDispatcher("/views/admin/services/services.jsp")
                 .forward(request, response);
     }
@@ -240,17 +248,22 @@ public class ServiceServlet extends HttpServlet {
     private void showRequestList(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // --- ROLE CHECK (comment out to disable) ---
-        // User user = (User) request.getSession().getAttribute("user");
-        // if (user == null || (!user.getRole().equals("admin") && !user.getRole().equals("staff"))) {
-        //     response.sendRedirect(request.getContextPath() + "/auth?action=login");
-        //     return;
-        // }
+        List<ServiceUsage> all      = serviceDAO.getAllUsageWithDetails();
+        List<Service>      services = serviceDAO.getAllServices();
 
-        List<ServiceUsage> usageList = serviceDAO.getAllUsageWithDetails();
-        List<Service>      services  = serviceDAO.getAllServices();
-        request.setAttribute("usageList", usageList);
-        request.setAttribute("services",  services);
+        int totalItems = all.size();
+        int totalPages = Math.max(1, (int) Math.ceil((double) totalItems / PAGE_SIZE));
+        int page = parsePage(request.getParameter("page"), totalPages);
+        int from = (page - 1) * PAGE_SIZE;
+        int to   = Math.min(from + PAGE_SIZE, totalItems);
+        List<ServiceUsage> usageList = (from < totalItems) ? all.subList(from, to) : Collections.emptyList();
+
+        request.setAttribute("usageList",   usageList);
+        request.setAttribute("services",    services);
+        request.setAttribute("currentPage", page);
+        request.setAttribute("totalPages",  totalPages);
+        request.setAttribute("totalItems",  totalItems);
+        request.setAttribute("pageSize",    PAGE_SIZE);
         request.getRequestDispatcher("/views/admin/services/requestList.jsp")
                 .forward(request, response);
     }
@@ -485,5 +498,14 @@ public class ServiceServlet extends HttpServlet {
         int contractId = Integer.parseInt(request.getParameter("contractId"));
         serviceDAO.markUsageBilled(contractId);
         response.sendRedirect(request.getContextPath() + "/services?action=requestList");
+    }
+
+    // ================= PAGINATION HELPER =================
+    private int parsePage(String param, int totalPages) {
+        int page = 1;
+        if (param != null) {
+            try { page = Integer.parseInt(param); } catch (NumberFormatException ignored) {}
+        }
+        return Math.min(Math.max(page, 1), totalPages);
     }
 }

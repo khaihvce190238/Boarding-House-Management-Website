@@ -17,10 +17,6 @@
         <servlet-class>Controllers.RoomServlet</servlet-class>
     </servlet>
     <servlet>
-        <servlet-name>ContractServlet</servlet-name>
-        <servlet-class>Controllers.ContractServlet</servlet-class>
-    </servlet>
-    <servlet>
         <servlet-name>ServiceServlet</servlet-name>
         <servlet-class>Controllers.ServiceServlet</servlet-class>
     </servlet>
@@ -55,10 +51,6 @@
     <servlet-mapping>
         <servlet-name>RoomServlet</servlet-name>
         <url-pattern>/room</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>ContractServlet</servlet-name>
-        <url-pattern>/contract</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>ServiceServlet</servlet-name>

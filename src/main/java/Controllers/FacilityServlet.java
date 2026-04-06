@@ -2,6 +2,7 @@ package Controllers;
 
 import DALs.FacilityDAO;
 import Models.Facility;
+import Models.RoomAmenity;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
@@ -50,6 +51,10 @@ public class FacilityServlet extends HttpServlet {
 
             case "delete":
                 deleteFacility(request, response);
+                break;
+
+            case "byRoom":
+                facilitiesByRoom(request, response);
                 break;
 
             default:
@@ -125,12 +130,16 @@ public class FacilityServlet extends HttpServlet {
         int categoryId = Integer.parseInt(request.getParameter("categoryId"));
         String description = request.getParameter("description");
         String image = request.getParameter("image");
+        String monthlyPriceStr = request.getParameter("monthlyPrice");
 
         Facility f = new Facility();
         f.setFacilityName(name);
         f.setCategoryId(categoryId);
         f.setDescription(description);
         f.setImage(image);
+        if (monthlyPriceStr != null && !monthlyPriceStr.trim().isEmpty()) {
+            try { f.setMonthlyPrice(new java.math.BigDecimal(monthlyPriceStr.trim())); } catch (NumberFormatException ignored) {}
+        }
 
         facilityDAO.insertFacility(f);
 
@@ -160,6 +169,7 @@ public class FacilityServlet extends HttpServlet {
         int categoryId = Integer.parseInt(request.getParameter("categoryId"));
         String description = request.getParameter("description");
         String image = request.getParameter("image");
+        String monthlyPriceStr = request.getParameter("monthlyPrice");
 
         Facility f = new Facility();
         f.setFacilityId(id);
@@ -167,6 +177,9 @@ public class FacilityServlet extends HttpServlet {
         f.setCategoryId(categoryId);
         f.setDescription(description);
         f.setImage(image);
+        if (monthlyPriceStr != null && !monthlyPriceStr.trim().isEmpty()) {
+            try { f.setMonthlyPrice(new java.math.BigDecimal(monthlyPriceStr.trim())); } catch (NumberFormatException ignored) {}
+        }
 
         facilityDAO.updateFacility(f);
 
@@ -182,5 +195,28 @@ public class FacilityServlet extends HttpServlet {
         facilityDAO.deleteFacility(id);
 
         response.sendRedirect("facility");
+    }
+
+    // ================= BY ROOM (JSON for AJAX) =================
+    private void facilitiesByRoom(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        int roomId = 0;
+        try { roomId = Integer.parseInt(request.getParameter("roomId")); }
+        catch (NumberFormatException e) {
+            response.getWriter().write("[]");
+            return;
+        }
+        List<RoomAmenity> list = facilityDAO.getAmenitiesByRoomId(roomId);
+        StringBuilder json = new StringBuilder("[");
+        for (int i = 0; i < list.size(); i++) {
+            RoomAmenity a = list.get(i);
+            json.append("{\"facilityId\":").append(a.getFacilityId())
+                .append(",\"facilityName\":\"").append(a.getFacilityName().replace("\"", "\\\""))
+                .append("\",\"quantity\":").append(a.getQuantity()).append("}");
+            if (i < list.size() - 1) json.append(",");
+        }
+        json.append("]");
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write(json.toString());
     }
 }

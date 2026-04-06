@@ -305,23 +305,23 @@ public class ServiceDAO extends DBContext {
     }
 
     // =============================
-    // TOTAL SERVICE COST BY CONTRACT
+    // TOTAL SERVICE COST BY CONTRACT (period-aware)
     // =============================
-    public BigDecimal calculateServiceTotal(int contractId) {
-
+    public BigDecimal calculateServiceTotal(int contractId, LocalDate periodStart, LocalDate periodEnd) {
         BigDecimal total = BigDecimal.ZERO;
-
-        List<ServiceUsage> list = getUsageByContract(contractId);
-
+        List<ServiceUsage> list = getUnbilledApprovedByContractAndPeriod(contractId, periodStart, periodEnd);
         for (ServiceUsage u : list) {
-
-            if (!u.isBilled()) {
-                total = total.add(calculateUsageCost(u));
-            }
-
+            total = total.add(calculateUsageCost(u));
         }
-
         return total;
+    }
+
+    // Keep old signature for backward compat (uses current month)
+    public BigDecimal calculateServiceTotal(int contractId) {
+        LocalDate now = LocalDate.now();
+        return calculateServiceTotal(contractId,
+            now.withDayOfMonth(1),
+            now.withDayOfMonth(now.lengthOfMonth()));
     }
 
     // =============================
@@ -409,21 +409,26 @@ public class ServiceDAO extends DBContext {
     }
 
     // =============================
-    // MARK USAGE BILLED
+    // MARK USAGE BILLED (ID-scoped, period-safe)
     // =============================
+    public void markUsageBilled(List<Integer> usageIds, int billId) {
+        if (usageIds == null || usageIds.isEmpty()) return;
+        String inClause = usageIds.stream().map(String::valueOf)
+            .collect(java.util.stream.Collectors.joining(","));
+        String sql = "UPDATE service_usage SET billed=1, bill_id=? WHERE usage_id IN (" + inClause + ")";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, billId);
+            ps.executeUpdate();
+        } catch (SQLException e) { e.printStackTrace(); }
+    }
+
+    // Old signature kept for backward compat — now properly scoped
     public void markUsageBilled(int contractId) {
-
-        String sql = "UPDATE service_usage SET billed = 1 WHERE contract_id = ?";
-
-        try {
-
-            PreparedStatement ps = connection.prepareStatement(sql);
+        String sql = "UPDATE service_usage SET billed=1 WHERE contract_id=? AND status='approved' AND billed=0";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, contractId);
             ps.executeUpdate();
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        } catch (SQLException e) { e.printStackTrace(); }
     }
 
     // =============================
@@ -608,5 +613,39 @@ public class ServiceDAO extends DBContext {
         u.setUnitPrice(unitPrice);
         u.setTotalCost(unitPrice.multiply(u.getQuantity()));
         return u;
+    }
+
+    // =============================
+    // GET UNBILLED APPROVED SERVICES IN PERIOD (for bill preview)
+    // =============================
+    public List<ServiceUsage> getUnbilledApprovedByContractAndPeriod(
+            int contractId, LocalDate periodStart, LocalDate periodEnd) {
+        List<ServiceUsage> list = new ArrayList<>();
+        String sql = "SELECT su.usage_id, su.contract_id, su.service_id, su.quantity, "
+                + "su.usage_date, su.billed, su.status, "
+                + "s.service_name, r.room_number, "
+                + "u.full_name AS requester_name, "
+                + "ph.price_amount AS unit_price "
+                + "FROM service_usage su "
+                + "JOIN service s ON su.service_id = s.service_id "
+                + "JOIN contract c ON su.contract_id = c.contract_id "
+                + "JOIN room r ON c.room_id = r.room_id "
+                + "LEFT JOIN contract_user cu ON c.contract_id = cu.contract_id AND cu.role = 'owner' "
+                + "LEFT JOIN [user] u ON cu.user_id = u.user_id "
+                + "LEFT JOIN price_history ph ON s.category_id = ph.category_id "
+                + "  AND ph.effective_from = (SELECT TOP 1 effective_from FROM price_history "
+                + "    WHERE category_id = s.category_id AND effective_from <= su.usage_date "
+                + "    ORDER BY effective_from DESC) "
+                + "WHERE su.contract_id = ? AND su.billed = 0 AND su.status = 'approved' "
+                + "  AND su.usage_date BETWEEN ? AND ? "
+                + "ORDER BY su.usage_date";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, contractId);
+            ps.setDate(2, Date.valueOf(periodStart));
+            ps.setDate(3, Date.valueOf(periodEnd));
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) list.add(mapUsageDetail(rs));
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
     }
 }

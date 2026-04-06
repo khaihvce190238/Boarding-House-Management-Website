@@ -61,12 +61,21 @@ public class ContractUser {
         this.joinedAt = joinedAt;
     }
 
-    public LocalDate getLeftAt() {
-        return leftAt;
-    }
+    public LocalDate getLeftAt()              { return leftAt; }
+    public void setLeftAt(LocalDate leftAt)   { this.leftAt = leftAt; }
 
-    public void setLeftAt(LocalDate leftAt) {
-        this.leftAt = leftAt;
-    }
-    
+    // Denormalized user info (from JOIN)
+    private String fullName;
+    private String username;
+    private String email;
+    private String phone;
+
+    public String getFullName()            { return fullName; }
+    public void   setFullName(String v)    { this.fullName = v; }
+    public String getUsername()            { return username; }
+    public void   setUsername(String v)    { this.username = v; }
+    public String getEmail()               { return email; }
+    public void   setEmail(String v)       { this.email = v; }
+    public String getPhone()               { return phone; }
+    public void   setPhone(String v)       { this.phone = v; }
 }

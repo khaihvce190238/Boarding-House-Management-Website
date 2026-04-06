@@ -7,8 +7,6 @@ import Models.PriceHistory;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.*;
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.List;
 
 public class PriceServlet extends HttpServlet {
@@ -103,23 +101,22 @@ public class PriceServlet extends HttpServlet {
                 .forward(request, response);
     }
 
-    // ================= INSERT =================
+    // ================= INSERT CATEGORY =================
     private void insertPrice(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
 
-        int categoryId = Integer.parseInt(request.getParameter("categoryId"));
-        BigDecimal priceAmount = new BigDecimal(request.getParameter("priceAmount"));
-        LocalDate effectiveFrom = LocalDate.parse(request.getParameter("effectiveFrom"));
+        String categoryCode = request.getParameter("categoryCode");
+        String categoryType = request.getParameter("categoryType");
+        String unit         = request.getParameter("unit");
 
-        PriceHistory price = new PriceHistory();
+        PriceCategory cat = new PriceCategory();
+        cat.setCategoryCode(categoryCode != null ? categoryCode.trim() : "");
+        cat.setCategoryType(categoryType != null ? categoryType.trim() : "");
+        cat.setUnit(unit != null ? unit.trim() : "");
 
-        price.setCategoryId(categoryId);
-        price.setPriceAmount(priceAmount);
-        price.setEffectiveFrom(effectiveFrom);
+        priceDAO.insertCategory(cat);
 
-        priceDAO.insertPrice(price);
-
-        response.sendRedirect("priceCategories");
+        response.sendRedirect(request.getContextPath() + "/price");
     }
 
     // ================= EDIT FORM =================
@@ -127,34 +124,30 @@ public class PriceServlet extends HttpServlet {
             throws ServletException, IOException {
 
         int id = Integer.parseInt(request.getParameter("id"));
-
-        PriceHistory price = priceDAO.getPriceById(id);
-
-        request.setAttribute("price", price);
-
+        PriceCategory category = priceDAO.getCategoryById(id);
+        request.setAttribute("category", category);
         request.getRequestDispatcher("/views/admin/prices/editPriceCategory.jsp")
                 .forward(request, response);
     }
 
-    // ================= UPDATE =================
+    // ================= UPDATE CATEGORY =================
     private void updatePrice(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
 
-        int id = Integer.parseInt(request.getParameter("priceId"));
-        int categoryId = Integer.parseInt(request.getParameter("categoryId"));
-        BigDecimal priceAmount = new BigDecimal(request.getParameter("priceAmount"));
-        LocalDate effectiveFrom = LocalDate.parse(request.getParameter("effectiveFrom"));
+        int    categoryId   = Integer.parseInt(request.getParameter("categoryId"));
+        String categoryCode = request.getParameter("categoryCode");
+        String categoryType = request.getParameter("categoryType");
+        String unit         = request.getParameter("unit");
 
-        PriceHistory price = new PriceHistory();
+        PriceCategory cat = new PriceCategory();
+        cat.setCategoryId(categoryId);
+        cat.setCategoryCode(categoryCode != null ? categoryCode.trim() : "");
+        cat.setCategoryType(categoryType != null ? categoryType.trim() : "");
+        cat.setUnit(unit != null ? unit.trim() : "");
 
-        price.setPriceId(id);
-        price.setCategoryId(categoryId);
-        price.setPriceAmount(priceAmount);
-        price.setEffectiveFrom(effectiveFrom);
+        priceDAO.updateCategory(cat);
 
-        priceDAO.updatePrice(price);
-
-        response.sendRedirect("priceCategories");
+        response.sendRedirect(request.getContextPath() + "/price");
     }
 
     // ================= DELETE =================

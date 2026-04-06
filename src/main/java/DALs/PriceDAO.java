@@ -154,6 +154,64 @@ public class PriceDAO extends DBContext {
     }
 
     // ===============================
+    // INSERT PRICE CATEGORY
+    // ===============================
+    public void insertCategory(PriceCategory cat) {
+        String sql = "INSERT INTO price_category (category_code, category_type, unit, is_deleted) VALUES (?, ?, ?, 0)";
+        try {
+            PreparedStatement st = connection.prepareStatement(sql);
+            st.setString(1, cat.getCategoryCode());
+            st.setString(2, cat.getCategoryType());
+            st.setString(3, cat.getUnit());
+            st.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // ===============================
+    // GET CATEGORY BY ID
+    // ===============================
+    public PriceCategory getCategoryById(int categoryId) {
+        String sql = "SELECT category_id, category_code, category_type, unit, is_deleted "
+                + "FROM price_category WHERE category_id = ? AND is_deleted = 0";
+        try {
+            PreparedStatement st = connection.prepareStatement(sql);
+            st.setInt(1, categoryId);
+            ResultSet rs = st.executeQuery();
+            if (rs.next()) {
+                PriceCategory c = new PriceCategory();
+                c.setCategoryId(rs.getInt("category_id"));
+                c.setCategoryCode(rs.getString("category_code"));
+                c.setCategoryType(rs.getString("category_type"));
+                c.setUnit(rs.getString("unit"));
+                c.setIsDeleted(rs.getBoolean("is_deleted"));
+                return c;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    // ===============================
+    // UPDATE PRICE CATEGORY
+    // ===============================
+    public void updateCategory(PriceCategory cat) {
+        String sql = "UPDATE price_category SET category_code = ?, category_type = ?, unit = ? WHERE category_id = ?";
+        try {
+            PreparedStatement st = connection.prepareStatement(sql);
+            st.setString(1, cat.getCategoryCode());
+            st.setString(2, cat.getCategoryType());
+            st.setString(3, cat.getUnit());
+            st.setInt(4, cat.getCategoryId());
+            st.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // ===============================
     // GET ALL PRICE CATEGORIES
     // ===============================
     public List<PriceCategory> getAllPriceCategories() {
@@ -236,5 +294,33 @@ public class PriceDAO extends DBContext {
         }
 
         return BigDecimal.ZERO;
+    }
+
+    // ===============================
+    // GET CATEGORY ID BY CODE (case-sensitive, not deleted)
+    // ===============================
+    public int getCategoryIdByCode(String code) {
+        String sql = "SELECT TOP 1 category_id FROM price_category "
+                   + "WHERE category_code = ? AND is_deleted = 0";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setString(1, code);
+            ResultSet rs = st.executeQuery();
+            if (rs.next()) return rs.getInt("category_id");
+        } catch (Exception e) { e.printStackTrace(); }
+        return 1; // fallback to first category
+    }
+
+    // ===============================
+    // GET CATEGORY ID BY UTILITY NAME (electricity/water mapping)
+    // ===============================
+    public int getCategoryIdByUtilityName(String utilityName) {
+        if (utilityName == null) return 0;
+        String normalized = utilityName.trim().toUpperCase();
+        if (normalized.contains("ELECTRICITY") || normalized.contains("\u0110I\u1EC6N")) {
+            return getCategoryIdByCode("ELECTRICITY");
+        } else if (normalized.contains("WATER") || normalized.contains("N\u01AF\u1EDB\u0302C")) {
+            return getCategoryIdByCode("WATER");
+        }
+        return getCategoryIdByCode("ELECTRICITY"); // fallback
     }
 }

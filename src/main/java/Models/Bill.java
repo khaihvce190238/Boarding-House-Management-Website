@@ -21,6 +21,9 @@ public class Bill {
     private String status;
     private boolean isDeleted;
 
+    // joined / display field (not persisted)
+    private String roomNumber;
+
     public Bill() {
     }
 
@@ -89,5 +92,13 @@ public class Bill {
     public void setIsDeleted(boolean isDeleted) {
         this.isDeleted = isDeleted;
     }
-    
+
+    public String getRoomNumber() {
+        return roomNumber;
+    }
+
+    public void setRoomNumber(String roomNumber) {
+        this.roomNumber = roomNumber;
+    }
+
 }

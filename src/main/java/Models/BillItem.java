@@ -18,6 +18,8 @@ public class BillItem {
     private String description;
     private BigDecimal quantity;
     private BigDecimal unitPrice;
+    private String  sourceType; // 'room','amenity','utility','service','manual'
+    private Integer sourceId;   // FK to originating row (nullable)
 
     public BillItem() {
     }
@@ -78,5 +80,10 @@ public class BillItem {
     public void setUnitPrice(BigDecimal unitPrice) {
         this.unitPrice = unitPrice;
     }
-    
+
+    public String  getSourceType() { return sourceType; }
+    public void    setSourceType(String sourceType) { this.sourceType = sourceType; }
+    public Integer getSourceId()   { return sourceId; }
+    public void    setSourceId(Integer sourceId)    { this.sourceId = sourceId; }
+
 }

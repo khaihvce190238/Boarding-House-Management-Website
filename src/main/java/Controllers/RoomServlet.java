@@ -1,30 +1,41 @@
 package Controllers;
 
+import DALs.ContractDAO;
 import DALs.FacilityDAO;
 import DALs.RoomCategoryDAO;
 import DALs.RoomDAO;
+import Models.Contract;
+import Models.Facility;
 import Models.Room;
 import Models.RoomAmenity;
 import Models.RoomCategory;
+import Models.ContractTenant;
+import Models.User;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.*;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 public class RoomServlet extends HttpServlet {
 
+    private static final int PAGE_SIZE = 10;
+
     private RoomDAO         roomDAO;
     private RoomCategoryDAO categoryDAO;
     private FacilityDAO     facilityDAO;
+    private ContractDAO     contractDAO;
 
     @Override
     public void init() {
         roomDAO     = new RoomDAO();
         categoryDAO = new RoomCategoryDAO();
         facilityDAO = new FacilityDAO();
+        contractDAO = new ContractDAO();
     }
 
     @Override
@@ -95,10 +106,16 @@ public class RoomServlet extends HttpServlet {
     private void showCategories(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        List<RoomCategory> categories = categoryDAO.getAllCategoriesWithCount();
-        Map<String, Integer> statusCounts = roomDAO.getCountByStatus();
+        // Fresh DAO instances per request to avoid stale singleton connections
+        RoomDAO freshRoomDAO         = new RoomDAO();
+        RoomCategoryDAO freshCatDAO  = new RoomCategoryDAO();
+
+        List<RoomCategory> categories    = freshCatDAO.getAllCategoriesWithCount();
+        List<Room>         allRooms      = freshRoomDAO.getAllRooms();
+        Map<String, Integer> statusCounts = freshRoomDAO.getCountByStatus();
 
         request.setAttribute("categories",   categories);
+        request.setAttribute("allRooms",     allRooms);
         request.setAttribute("statusCounts", statusCounts);
         request.getRequestDispatcher("/views/customer/roomCategories.jsp")
                 .forward(request, response);
@@ -137,11 +154,22 @@ public class RoomServlet extends HttpServlet {
         List<RoomCategory>   categories   = categoryDAO.getAllCategories();
         Map<String, Integer> statusCounts = roomDAO.getCountByStatus();
 
-        request.setAttribute("rooms",            rooms);
+        int totalItems = rooms.size();
+        int totalPages = Math.max(1, (int) Math.ceil((double) totalItems / PAGE_SIZE));
+        int page = parsePage(request.getParameter("page"), totalPages);
+        int from = (page - 1) * PAGE_SIZE;
+        int to   = Math.min(from + PAGE_SIZE, totalItems);
+        List<Room> pageRooms = (from < totalItems) ? rooms.subList(from, to) : Collections.emptyList();
+
+        request.setAttribute("rooms",            pageRooms);
         request.setAttribute("categories",       categories);
         request.setAttribute("statusCounts",     statusCounts);
         request.setAttribute("activeCategoryId", activeCategoryId);
         request.setAttribute("activeStatus",     activeStatus);
+        request.setAttribute("currentPage",      page);
+        request.setAttribute("totalPages",       totalPages);
+        request.setAttribute("totalItems",       totalItems);
+        request.setAttribute("pageSize",         PAGE_SIZE);
         request.getRequestDispatcher("/views/customer/rooms.jsp")
                 .forward(request, response);
     }
@@ -160,6 +188,16 @@ public class RoomServlet extends HttpServlet {
             category = categoryDAO.getCategoryById(room.getCategoryId());
         }
 
+        // Tell the JSP whether the current customer already has an active contract
+        HttpSession session = request.getSession(false);
+        if (session != null && session.getAttribute("user") != null) {
+            User user = (User) session.getAttribute("user");
+            if ("customer".equalsIgnoreCase(user.getRole())) {
+                boolean alreadyHasContract = contractDAO.hasActiveContract(user.getUserId());
+                request.setAttribute("alreadyHasContract", alreadyHasContract);
+            }
+        }
+
         request.setAttribute("room",      room);
         request.setAttribute("amenities", amenities);
         request.setAttribute("category",  category);
@@ -171,10 +209,32 @@ public class RoomServlet extends HttpServlet {
     private void listRooms(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        List<Room> rooms = roomDAO.getAllRooms();
+        List<Room> allRooms  = roomDAO.getAllRooms();
         List<RoomCategory> categories = categoryDAO.getAllCategories();
-        request.setAttribute("rooms",      rooms);
-        request.setAttribute("categories", categories);
+
+        // Get active contract info for each room
+        Map<Integer, Contract> roomContracts = new LinkedHashMap<>();
+        for (Room r : allRooms) {
+            Contract c = contractDAO.getActiveContractByRoomId(r.getRoomId());
+            if (c != null) {
+                roomContracts.put(r.getRoomId(), c);
+            }
+        }
+
+        int totalItems = allRooms.size();
+        int totalPages = Math.max(1, (int) Math.ceil((double) totalItems / PAGE_SIZE));
+        int page = parsePage(request.getParameter("page"), totalPages);
+        int from = (page - 1) * PAGE_SIZE;
+        int to   = Math.min(from + PAGE_SIZE, totalItems);
+        List<Room> rooms = (from < totalItems) ? allRooms.subList(from, to) : Collections.emptyList();
+
+        request.setAttribute("rooms",       rooms);
+        request.setAttribute("categories",  categories);
+        request.setAttribute("roomContracts", roomContracts);
+        request.setAttribute("currentPage", page);
+        request.setAttribute("totalPages",  totalPages);
+        request.setAttribute("totalItems",  totalItems);
+        request.setAttribute("pageSize",    PAGE_SIZE);
         request.getRequestDispatcher("/views/admin/rooms/rooms.jsp")
                 .forward(request, response);
     }
@@ -195,6 +255,8 @@ public class RoomServlet extends HttpServlet {
         String status        = request.getParameter("status");
         String image         = request.getParameter("image");
         String categoryParam = request.getParameter("categoryId");
+        String areaParam     = request.getParameter("areaMSquare");
+        String maxOccParam   = request.getParameter("maxOccupants");
 
         Room room = new Room();
         room.setRoomNumber(roomNumber);
@@ -203,6 +265,12 @@ public class RoomServlet extends HttpServlet {
         if (categoryParam != null && !categoryParam.isEmpty()) {
             room.setCategoryId(Integer.parseInt(categoryParam));
         }
+        if (areaParam != null && !areaParam.trim().isEmpty()) {
+            try { room.setAreaMSquare(new java.math.BigDecimal(areaParam.trim())); } catch (NumberFormatException ignored) {}
+        }
+        if (maxOccParam != null && !maxOccParam.trim().isEmpty()) {
+            try { room.setMaxOccupants(Integer.parseInt(maxOccParam.trim())); } catch (NumberFormatException ignored) {}
+        }
         roomDAO.insertRoom(room);
         response.sendRedirect("room?action=list");
     }
@@ -210,11 +278,10 @@ public class RoomServlet extends HttpServlet {
     // ================= EDIT (admin) =================
     private void showEditForm(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
         int id = Integer.parseInt(request.getParameter("id"));
         Room room = roomDAO.getRoomById(id);
         List<RoomCategory> categories = categoryDAO.getAllCategories();
-        request.setAttribute("room",       room);
+        request.setAttribute("room", room);
         request.setAttribute("categories", categories);
         request.getRequestDispatcher("/views/admin/rooms/editRoom.jsp")
                 .forward(request, response);
@@ -222,12 +289,13 @@ public class RoomServlet extends HttpServlet {
 
     private void updateRoom(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
-
-        int    id            = Integer.parseInt(request.getParameter("id"));
-        String roomNumber    = request.getParameter("roomNumber");
-        String status        = request.getParameter("status");
-        String image         = request.getParameter("image");
+        int id = Integer.parseInt(request.getParameter("roomId"));
+        String roomNumber = request.getParameter("roomNumber");
+        String status = request.getParameter("status");
+        String image = request.getParameter("image");
         String categoryParam = request.getParameter("categoryId");
+        String areaParam = request.getParameter("areaMSquare");
+        String maxOccParam = request.getParameter("maxOccupants");
 
         Room room = new Room();
         room.setRoomId(id);
@@ -236,6 +304,12 @@ public class RoomServlet extends HttpServlet {
         room.setImage(image);
         if (categoryParam != null && !categoryParam.isEmpty()) {
             room.setCategoryId(Integer.parseInt(categoryParam));
+        }
+        if (areaParam != null && !areaParam.trim().isEmpty()) {
+            try { room.setAreaMSquare(new java.math.BigDecimal(areaParam.trim())); } catch (NumberFormatException ignored) {}
+        }
+        if (maxOccParam != null && !maxOccParam.trim().isEmpty()) {
+            try { room.setMaxOccupants(Integer.parseInt(maxOccParam.trim())); } catch (NumberFormatException ignored) {}
         }
         roomDAO.updateRoom(room);
         response.sendRedirect("room?action=list");
@@ -257,7 +331,18 @@ public class RoomServlet extends HttpServlet {
         int  id   = Integer.parseInt(request.getParameter("id"));
         Room room = roomDAO.getRoomById(id);
         request.setAttribute("room", room);
+        // Pass resident history for this room
+        request.setAttribute("tenantHistory", contractDAO.getTenantHistoryByRoomId(id));
         request.getRequestDispatcher("/views/admin/rooms/roomDetail.jsp")
                 .forward(request, response);
+    }
+
+    // ================= PAGINATION HELPER =================
+    private int parsePage(String param, int totalPages) {
+        int page = 1;
+        if (param != null) {
+            try { page = Integer.parseInt(param); } catch (NumberFormatException ignored) {}
+        }
+        return Math.min(Math.max(page, 1), totalPages);
     }
 }

@@ -15,6 +15,10 @@ public class Room {
     private String     categoryName;
     private BigDecimal basePrice;
 
+    // Physical attributes
+    private BigDecimal areaMSquare;   // area_m2 column
+    private int        maxOccupants;  // max_occupants column
+
     public Room() {}
 
     // Original constructor (backward compatible)
@@ -43,6 +47,8 @@ public class Room {
     public int        getCategoryId()   { return categoryId; }
     public String     getCategoryName() { return categoryName; }
     public BigDecimal getBasePrice()    { return basePrice; }
+    public BigDecimal getAreaMSquare()  { return areaMSquare; }
+    public int        getMaxOccupants() { return maxOccupants; }
 
     public void setRoomId(int roomId)             { this.roomId = roomId; }
     public void setRoomNumber(String roomNumber)  { this.roomNumber = roomNumber; }
@@ -52,4 +58,6 @@ public class Room {
     public void setCategoryId(int categoryId)     { this.categoryId = categoryId; }
     public void setCategoryName(String n)         { this.categoryName = n; }
     public void setBasePrice(BigDecimal p)        { this.basePrice = p; }
+    public void setAreaMSquare(BigDecimal a)      { this.areaMSquare = a; }
+    public void setMaxOccupants(int m)            { this.maxOccupants = m; }
 }

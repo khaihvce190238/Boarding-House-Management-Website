@@ -126,6 +126,17 @@ public class CustomerServlet extends HttpServlet {
             return;
         }
 
+        // Server-side phone validation
+        if (phone != null && !phone.trim().isEmpty()) {
+            if (!phone.trim().matches("^(0|\\+84)[0-9]{9}$")) {
+                request.setAttribute("error", "Số điện thoại không hợp lệ (VD: 0912345678)");
+                request.setAttribute("user", user);
+                request.getRequestDispatcher("/views/customer/profileUpdate.jsp")
+                        .forward(request, response);
+                return;
+            }
+        }
+
         user.setFullName(fullName.trim());
         user.setEmail(email != null ? email.trim() : "");
         user.setPhone(phone != null ? phone.trim() : "");

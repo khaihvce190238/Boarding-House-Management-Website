@@ -31,9 +31,9 @@ public class DBContext {
         DBContext db = new DBContext();
 
         if (db.connection != null) {
-            System.out.println("🎉 Test connection successful!");
+            System.out.println("Test connection successful!");
         } else {
-            System.out.println("⚠️ Connection is null. Check database configuration.");
+            System.out.println("Connection is null. Check database configuration.");
         }
     }
 }

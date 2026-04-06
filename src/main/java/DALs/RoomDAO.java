@@ -13,7 +13,8 @@ public class RoomDAO extends DBContext {
 
     private static final String SELECT_WITH_CAT =
         "SELECT r.room_id, r.room_number, r.status, r.image, r.is_deleted, " +
-        "       r.category_id, rc.category_name, rc.base_price " +
+        "       r.category_id, rc.category_name, rc.base_price, " +
+        "       r.area_m2, r.max_occupants " +
         "FROM room r " +
         "LEFT JOIN room_category rc ON r.category_id = rc.category_id AND rc.is_deleted = 0 ";
 
@@ -126,8 +127,8 @@ public class RoomDAO extends DBContext {
 
     // ── Insert ───────────────────────────────────────────────────────────────
     public void insertRoom(Room r) {
-        String sql = "INSERT INTO room(room_number, status, image, category_id, is_deleted) " +
-                     "VALUES (?, ?, ?, ?, 0)";
+        String sql = "INSERT INTO room(room_number, status, image, category_id, area_m2, max_occupants, is_deleted) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, 0)";
         try (PreparedStatement st = connection.prepareStatement(sql)) {
             st.setString(1, r.getRoomNumber());
             st.setString(2, r.getStatus());
@@ -136,6 +137,11 @@ public class RoomDAO extends DBContext {
                 st.setInt(4, r.getCategoryId());
             else
                 st.setNull(4, Types.INTEGER);
+            if (r.getAreaMSquare() != null)
+                st.setBigDecimal(5, r.getAreaMSquare());
+            else
+                st.setNull(5, Types.DECIMAL);
+            st.setInt(6, r.getMaxOccupants());
             st.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -144,7 +150,8 @@ public class RoomDAO extends DBContext {
 
     // ── Update ───────────────────────────────────────────────────────────────
     public void updateRoom(Room r) {
-        String sql = "UPDATE room SET room_number = ?, status = ?, image = ?, category_id = ? " +
+        String sql = "UPDATE room SET room_number = ?, status = ?, image = ?, category_id = ?, " +
+                     "area_m2 = ?, max_occupants = ? " +
                      "WHERE room_id = ?";
         try (PreparedStatement st = connection.prepareStatement(sql)) {
             st.setString(1, r.getRoomNumber());
@@ -154,7 +161,12 @@ public class RoomDAO extends DBContext {
                 st.setInt(4, r.getCategoryId());
             else
                 st.setNull(4, Types.INTEGER);
-            st.setInt(5, r.getRoomId());
+            if (r.getAreaMSquare() != null)
+                st.setBigDecimal(5, r.getAreaMSquare());
+            else
+                st.setNull(5, Types.DECIMAL);
+            st.setInt(6, r.getMaxOccupants());
+            st.setInt(7, r.getRoomId());
             st.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -197,6 +209,9 @@ public class RoomDAO extends DBContext {
         room.setCategoryName(rs.getString("category_name"));
         BigDecimal bp = rs.getBigDecimal("base_price");
         room.setBasePrice(bp != null ? bp : BigDecimal.ZERO);
+        BigDecimal area = rs.getBigDecimal("area_m2");
+        room.setAreaMSquare(area);
+        room.setMaxOccupants(rs.getInt("max_occupants"));
         return room;
     }
 }

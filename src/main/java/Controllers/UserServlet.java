@@ -12,6 +12,8 @@ public class UserServlet extends HttpServlet {
 
     private UserDAO userDAO;
 
+    private static final int PAGE_SIZE = 10;
+
     @Override
     public void init() {
         userDAO = new UserDAO();
@@ -99,9 +101,28 @@ public class UserServlet extends HttpServlet {
             users.removeIf(u -> !roleFilter.equals(u.getRole()));
         }
 
-        request.setAttribute("users", users);
-        request.setAttribute("search", search);
-        request.setAttribute("roleFilter", roleFilter);
+        request.setAttribute("users",      users);
+        request.setAttribute("search",      search);
+        request.setAttribute("roleFilter",  roleFilter);
+
+        // Pagination
+        int totalItems = users.size();
+        int totalPages = Math.max(1, (int) Math.ceil((double) totalItems / PAGE_SIZE));
+        int page = 1;
+        String pageParam = request.getParameter("page");
+        if (pageParam != null) {
+            try { page = Integer.parseInt(pageParam); } catch (NumberFormatException ignored) {}
+        }
+        page = Math.min(Math.max(page, 1), totalPages);
+        int fromIndex = (page - 1) * PAGE_SIZE;
+        int toIndex   = Math.min(fromIndex + PAGE_SIZE, totalItems);
+        List<User> pageUsers = (fromIndex < totalItems) ? users.subList(fromIndex, toIndex) : java.util.Collections.emptyList();
+
+        request.setAttribute("users",       pageUsers);
+        request.setAttribute("totalItems",  totalItems);
+        request.setAttribute("totalPages",  totalPages);
+        request.setAttribute("currentPage", page);
+        request.setAttribute("pageSize",    PAGE_SIZE);
 
         request.getRequestDispatcher("/views/admin/users/users.jsp")
                 .forward(request, response);
@@ -159,12 +180,30 @@ public class UserServlet extends HttpServlet {
             user.setUsername(request.getParameter("username"));
             user.setFullName(request.getParameter("fullName"));
             user.setEmail(request.getParameter("email"));
-            user.setPhone(request.getParameter("phone"));
+            String phoneVal = request.getParameter("phone");
+            // Server-side phone validation
+            if (phoneVal != null && !phoneVal.trim().isEmpty()
+                    && !phoneVal.trim().matches("^(0|\\+84)[0-9]{9}$")) {
+                session.setAttribute("adminError", "Số điện thoại không hợp lệ (VD: 0912345678)");
+                response.sendRedirect(request.getContextPath() + "/user?action=edit&id=" + user.getUserId());
+                return;
+            }
+            user.setPhone(phoneVal);
             user.setRole(request.getParameter("role"));
             user.setImage(request.getParameter("image") != null
                     ? request.getParameter("image") : "default.png");
 
-            String newPassword = request.getParameter("password");
+            String newPassword    = request.getParameter("password");
+            String confirmPassword = request.getParameter("confirmPassword");
+
+            // Server-side confirm password check
+            if (newPassword != null && !newPassword.trim().isEmpty()) {
+                if (confirmPassword == null || !newPassword.trim().equals(confirmPassword.trim())) {
+                    session.setAttribute("adminError", "Mật khẩu xác nhận không khớp");
+                    response.sendRedirect(request.getContextPath() + "/user?action=edit&id=" + user.getUserId());
+                    return;
+                }
+            }
             user.setPassword(newPassword != null ? newPassword.trim() : "");
 
             boolean success = userDAO.updateUserById(user);
