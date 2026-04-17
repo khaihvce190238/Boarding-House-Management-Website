@@ -117,7 +117,7 @@ public class RoomServlet extends HttpServlet {
         request.setAttribute("categories",   categories);
         request.setAttribute("allRooms",     allRooms);
         request.setAttribute("statusCounts", statusCounts);
-        request.getRequestDispatcher("/views/customer/roomCategories.jsp")
+        request.getRequestDispatcher("/views/customer/rooms.jsp")
                 .forward(request, response);
     }
 
